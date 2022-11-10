@@ -8,6 +8,7 @@ import {
     GraphQLID,
 } from 'graphql'
 import userRepository from '../../repositories/userRepository'
+import User from '../models/User'
 
 
 const SignUpInput = new GraphQLInputObjectType({
@@ -21,24 +22,39 @@ const SignUpInput = new GraphQLInputObjectType({
     })
 })
 
-const SignUpOutput = new GraphQLObjectType({
-    name: 'SignUpOutput',
+const LoginInput = new GraphQLInputObjectType({
+    name: 'LoginInput',
     fields: () => ({
-        _id: { type: GraphQLID },
-        username: { type: GraphQLString },
-        firstName: { type: GraphQLString },
-        lastName: { type: GraphQLString },
-        email: { type: GraphQLString },
-        accessToken: { type: GraphQLString },
+        username: { type: new GraphQLNonNull(GraphQLString) },
+        password: { type: new GraphQLNonNull(GraphQLString) },
+    })
+})
+
+const LoginOutput = new GraphQLObjectType({
+    name: 'LoginOutput',
+    fields: () => ({
+        _id: { type: new GraphQLNonNull(GraphQLID) },
+        username: { type: new GraphQLNonNull(GraphQLString) },
+        firstName: { type: new GraphQLNonNull(GraphQLString) },
+        lastName: { type: new GraphQLNonNull(GraphQLString) },
+        email: { type: new GraphQLNonNull(GraphQLString) },
+        accessToken: { type: new GraphQLNonNull(GraphQLString) },
     })
 })
 
 const authMutations:  ThunkObjMap<GraphQLFieldConfig<any, any, any>> = {
     signUp: {
-        type: SignUpOutput,
+        type: User,
         args: { user: { type: SignUpInput }},
         resolve: (_, { user }) => {
             return userRepository.signUp(user)
+        }
+    },
+    login: {
+        type: LoginOutput,
+        args: { user: { type: LoginInput }},
+        resolve: (_, { user }) => {
+            return userRepository.login(user)
         }
     }
 }

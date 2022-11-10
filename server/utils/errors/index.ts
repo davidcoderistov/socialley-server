@@ -32,7 +32,7 @@ export function getValidationError (err: Error.ValidationError): GraphQLError {
     })
 }
 
-export function getUniqueValidationError (path: string, message: string): GraphQLError {
+export function getCustomValidationError (path: string, message: string): GraphQLError {
     return new GraphQLError('Validation error', {
         extensions: {
             code: GRAPHQL_ERROR_CODES.MONGODB_VALIDATION_FAILED,

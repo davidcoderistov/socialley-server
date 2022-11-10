@@ -4,7 +4,7 @@ import { Error } from 'mongoose'
 import { MongoError } from 'mongodb'
 import {
     getValidationError,
-    getUniqueValidationError,
+    getCustomValidationError,
     getMongoDBServerError,
     generateAccessToken,
     generateRefreshToken,
@@ -29,19 +29,11 @@ async function signUp (signUpInput: SignUpInput) {
             email: signUpInput.email,
             password: passwordHash,
         })
-        const createdUser = await user.save()
-
-        const accessToken = generateAccessToken(createdUser._id.toString())
-        createdUser.refreshToken = generateRefreshToken(createdUser._id.toString())
-
-        await createdUser.save()
-
-        createdUser.accessToken = accessToken
-        return createdUser
+        return await user.save()
     } catch (err) {
         if (err instanceof MongoError) {
             if (err.code === 11000) {
-                throw getUniqueValidationError('username', 'Username must be unique')
+                throw getCustomValidationError('username', 'Username must be unique')
             }
         } else if (err instanceof Error.ValidationError) {
             throw getValidationError(err)
@@ -50,6 +42,36 @@ async function signUp (signUpInput: SignUpInput) {
     }
 }
 
+interface LoginInput {
+    username: string
+    password: string
+}
+
+async function login ({ username, password }: LoginInput) {
+    try {
+        const user = await User.findOne({ username })
+        if (!user) {
+            return Promise.reject(getCustomValidationError('username', `User ${username} does not exist`))
+        }
+
+        const passwordMatch = await bcrypt.compare(password, user.password)
+        if (!passwordMatch) {
+            return Promise.reject(getCustomValidationError('password', 'Passwords do not match'))
+        }
+
+        const userId = user._id.toString()
+        user.refreshToken = generateRefreshToken(userId)
+
+        await user.save()
+
+        user.accessToken = generateAccessToken(userId)
+        return user
+    } catch (err) {
+        throw getMongoDBServerError('Could not login. Please try again later')
+    }
+}
+
 export default {
     signUp,
+    login,
 }
