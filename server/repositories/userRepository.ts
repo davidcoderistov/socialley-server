@@ -1,13 +1,13 @@
-import User from '../models/User'
+import User, { UserType } from '../models/User'
 import bcrypt from 'bcrypt'
 import { Error } from 'mongoose'
 import { MongoError } from 'mongodb'
 import {
-    getValidationError,
-    getCustomValidationError,
-    getMongoDBServerError,
     generateAccessToken,
     generateRefreshToken,
+    getCustomValidationError,
+    getMongoDBServerError,
+    getValidationError,
 } from '../utils'
 
 
@@ -19,7 +19,7 @@ interface SignUpInput {
     password: string
 }
 
-async function signUp (signUpInput: SignUpInput) {
+async function signUp (signUpInput: SignUpInput): Promise<UserType> {
     try {
         const passwordHash = await bcrypt.hash(signUpInput.password, 10)
         const user = new User({
@@ -47,7 +47,7 @@ interface LoginInput {
     password: string
 }
 
-async function login ({ username, password }: LoginInput) {
+async function login ({ username, password }: LoginInput): Promise<UserType> {
     try {
         const user = await User.findOne({ username })
         if (!user) {
