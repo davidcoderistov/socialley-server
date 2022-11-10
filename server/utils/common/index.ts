@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import cookie from 'cookie'
 
 
 export function generateAccessToken (userId: string): string {
@@ -13,5 +14,14 @@ export function generateRefreshToken (userId: string): string {
         id: userId,
         refresh: true,
     }, process.env.SECRET_KEY, { expiresIn: '7d' })
+}
+
+export function serializeRefreshToken (refreshToken: string) {
+    return cookie.serialize('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 7 * 24 * 60 * 60,
+        path: '/',
+    })
 }
 

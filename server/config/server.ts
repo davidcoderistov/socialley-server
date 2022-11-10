@@ -7,6 +7,7 @@ import { useServer } from 'graphql-ws/lib/use/ws'
 import { ApolloServer } from '@apollo/server'
 import { expressMiddleware } from '@apollo/server/express4'
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer'
+import { serializeRefreshToken } from '../utils'
 import schema from '../graphql/schema'
 
 
@@ -42,12 +43,8 @@ const setupServer = async () => {
     app.use('/api', cors(), json(), expressMiddleware(server, {
         context: async ({ req, res }) => {
             return {
-                setCookie (key: string, value: string, durationInMs: number) {
-                    res.cookie(key, value, {
-                        secure: true,
-                        httpOnly: true,
-                        maxAge: durationInMs,
-                    })
+                setRefreshTokenCookie (refreshToken: string) {
+                    res.setHeader('Set-Cookie',serializeRefreshToken(refreshToken))
                 }
             }
         }
