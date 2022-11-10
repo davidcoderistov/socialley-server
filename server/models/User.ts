@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose'
+import { Schema, InferSchemaType, model } from 'mongoose'
 
 
 const UserSchema = new Schema({
@@ -38,5 +38,7 @@ const UserSchema = new Schema({
     accessToken: String,
     refreshToken: String,
 })
+
+export type UserType = InferSchemaType<typeof UserSchema>
 
 export default model('User', UserSchema)
