@@ -39,7 +39,19 @@ const setupServer = async () => {
 
     await server.start()
 
-    app.use('/api', cors(), json(), expressMiddleware(server))
+    app.use('/api', cors(), json(), expressMiddleware(server, {
+        context: async ({ req, res }) => {
+            return {
+                setCookie (key: string, value: string, durationInMs: number) {
+                    res.cookie(key, value, {
+                        secure: true,
+                        httpOnly: true,
+                        maxAge: durationInMs,
+                    })
+                }
+            }
+        }
+    }))
 
     httpServer.listen(process.env.PORT, () => {
         console.log(`Server listening on http://localhost:${process.env.PORT}/api`)
