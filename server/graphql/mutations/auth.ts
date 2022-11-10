@@ -9,6 +9,7 @@ import {
 } from 'graphql'
 import userRepository from '../../repositories/userRepository'
 import User from '../models/User'
+import { Context } from '../types'
 
 
 const SignUpInput = new GraphQLInputObjectType({
@@ -42,7 +43,7 @@ const LoginOutput = new GraphQLObjectType({
     })
 })
 
-const authMutations:  ThunkObjMap<GraphQLFieldConfig<any, any, any>> = {
+const authMutations:  ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     signUp: {
         type: User,
         args: { user: { type: SignUpInput }},
@@ -53,8 +54,10 @@ const authMutations:  ThunkObjMap<GraphQLFieldConfig<any, any, any>> = {
     login: {
         type: LoginOutput,
         args: { user: { type: LoginInput }},
-        resolve: (_, { user }) => {
-            return userRepository.login(user)
+        resolve: async (_, { user }, { setCookie }) => {
+            const loggedInUser = await userRepository.login(user)
+            setCookie('refreshToken', loggedInUser.refreshToken, 7 * 24 * 60 * 60 * 1000)
+            return loggedInUser
         }
     }
 }
