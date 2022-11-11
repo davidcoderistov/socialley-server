@@ -21,6 +21,7 @@ export function getValidationErrors (err: Error.ValidationError): ValidationErro
 export const GRAPHQL_ERROR_CODES = {
     MONGODB_VALIDATION_FAILED: 'MONGODB_VALIDATION_FAILED',
     MONGODB_SERVER_ERROR: 'MONGODB_SERVER_ERROR',
+    INVALID_SESSION: 'INVALID_SESSION',
 }
 
 export function getValidationError (err: Error.ValidationError): GraphQLError {
@@ -45,6 +46,14 @@ export function getMongoDBServerError (message) {
     return new GraphQLError(message, {
         extensions: {
             code: GRAPHQL_ERROR_CODES.MONGODB_SERVER_ERROR,
+        }
+    })
+}
+
+export function getInvalidSessionError () {
+    return new GraphQLError('Invalid session', {
+        extensions: {
+            code: GRAPHQL_ERROR_CODES.INVALID_SESSION,
         }
     })
 }
