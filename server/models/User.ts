@@ -35,7 +35,6 @@ const UserSchema = new Schema({
             message: () => 'Password must contain at least 8 characters'
         }
     },
-    accessToken: String,
     refreshToken: String,
 })
 
