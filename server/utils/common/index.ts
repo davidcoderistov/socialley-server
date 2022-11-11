@@ -31,11 +31,11 @@ export function verifyRefreshToken (refreshToken: string) {
     })
 }
 
-export function serializeRefreshToken (refreshToken: string) {
+export function serializeRefreshToken (refreshToken: string, immediate: boolean = false) {
     return cookie.serialize('refreshToken', refreshToken, {
         httpOnly: true,
         secure: true,
-        maxAge: 7 * 24 * 60 * 60,
+        maxAge: immediate ? 0 : 7 * 24 * 60 * 60,
         path: '/',
     })
 }

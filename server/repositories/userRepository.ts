@@ -113,8 +113,37 @@ async function refresh ({ refreshToken }: RefreshInput): Promise<UserTypeWithAcc
     }
 }
 
+interface LogoutInput {
+    refreshToken: string | undefined
+}
+
+async function logout ({ refreshToken }: LogoutInput): Promise<UserType> {
+    try {
+        if (!refreshToken) {
+            return Promise.reject(getInvalidSessionError())
+        }
+
+        const decoded = await verifyRefreshToken(refreshToken)
+        const { id, refresh } = decoded as { id: string, refresh?: boolean }
+        if (!id || !refresh) {
+            return Promise.reject(getInvalidSessionError())
+        }
+
+        const user = await User.findById(id)
+        if (!user || user.refreshToken !== refreshToken) {
+            return Promise.reject(getInvalidSessionError())
+        }
+
+        user.refreshToken = undefined
+        return await user.save()
+    } catch (err) {
+        throw getInvalidSessionError()
+    }
+}
+
 export default {
     signUp,
     login,
     refresh,
+    logout,
 }

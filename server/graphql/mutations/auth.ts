@@ -48,9 +48,20 @@ const authMutations:  ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     },
     refresh: {
         type: User,
-        resolve: (_, __, { getRefreshTokenCookie }) => {
+        resolve: async (_, __, { setRefreshTokenCookie, getRefreshTokenCookie }) => {
             const refreshToken = getRefreshTokenCookie()
-            return userRepository.refresh({ refreshToken })
+            const user = await userRepository.refresh({ refreshToken })
+            setRefreshTokenCookie(user.refreshToken)
+            return user
+        }
+    },
+    logout: {
+        type: User,
+        resolve: async (_, __, { setRefreshTokenCookie, getRefreshTokenCookie }) => {
+            const refreshToken = getRefreshTokenCookie()
+            const user = userRepository.logout({ refreshToken })
+            setRefreshTokenCookie('', true)
+            return user
         }
     }
 }

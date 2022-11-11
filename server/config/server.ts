@@ -43,8 +43,8 @@ const setupServer = async () => {
     app.use('/api', cors({ origin: 'http://localhost:3000', credentials: true }), json(), expressMiddleware(server, {
         context: async ({ req, res }) => {
             return {
-                setRefreshTokenCookie (refreshToken: string) {
-                    res.setHeader('Set-Cookie',serializeRefreshToken(refreshToken))
+                setRefreshTokenCookie (refreshToken: string, immediate: boolean = false) {
+                    res.setHeader('Set-Cookie',serializeRefreshToken(refreshToken, immediate))
                 },
                 getRefreshTokenCookie () {
                     return deserializeRefreshToken(req.headers.cookie)
