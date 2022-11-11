@@ -4,8 +4,6 @@ import {
     GraphQLInputObjectType,
     GraphQLNonNull,
     GraphQLString,
-    GraphQLObjectType,
-    GraphQLID,
 } from 'graphql'
 import userRepository from '../../repositories/userRepository'
 import User from '../models/User'
@@ -31,25 +29,6 @@ const LoginInput = new GraphQLInputObjectType({
     })
 })
 
-const LoginOutput = new GraphQLObjectType({
-    name: 'LoginOutput',
-    fields: () => ({
-        _id: { type: new GraphQLNonNull(GraphQLID) },
-        username: { type: new GraphQLNonNull(GraphQLString) },
-        firstName: { type: new GraphQLNonNull(GraphQLString) },
-        lastName: { type: new GraphQLNonNull(GraphQLString) },
-        email: { type: new GraphQLNonNull(GraphQLString) },
-        accessToken: { type: new GraphQLNonNull(GraphQLString) },
-    })
-})
-
-const RefreshOutput = new GraphQLObjectType({
-    name: 'RefreshOutput',
-    fields: () => ({
-        accessToken: { type: GraphQLString },
-    })
-})
-
 const authMutations:  ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     signUp: {
         type: User,
@@ -59,7 +38,7 @@ const authMutations:  ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         }
     },
     login: {
-        type: LoginOutput,
+        type: User,
         args: { user: { type: LoginInput }},
         resolve: async (_, { user }, { setRefreshTokenCookie }) => {
             const loggedInUser = await userRepository.login(user)
@@ -68,7 +47,7 @@ const authMutations:  ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         }
     },
     refresh: {
-        type: RefreshOutput,
+        type: User,
         resolve: (_, __, { getRefreshTokenCookie }) => {
             const refreshToken = getRefreshTokenCookie()
             return userRepository.refresh({ refreshToken })

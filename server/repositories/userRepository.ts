@@ -13,6 +13,8 @@ import {
 } from '../utils'
 
 
+type UserTypeWithAccessToken = UserType & { accessToken: string }
+
 interface SignUpInput {
     username: string
     firstName: string
@@ -49,7 +51,7 @@ interface LoginInput {
     password: string
 }
 
-async function login ({ username, password }: LoginInput): Promise<UserType> {
+async function login ({ username, password }: LoginInput): Promise<UserTypeWithAccessToken> {
     try {
         const user = await User.findOne({ username })
         if (!user) {
@@ -66,8 +68,10 @@ async function login ({ username, password }: LoginInput): Promise<UserType> {
 
         await user.save()
 
-        user.accessToken = generateAccessToken(userId)
-        return user
+        return {
+            ...user.toObject(),
+            accessToken: generateAccessToken(userId),
+        }
     } catch (err) {
         throw getMongoDBServerError('Could not login. Please try again later')
     }
@@ -77,7 +81,7 @@ interface RefreshInput {
     refreshToken: string | undefined
 }
 
-async function refresh ({ refreshToken }: RefreshInput): Promise<{ accessToken: string }> {
+async function refresh ({ refreshToken }: RefreshInput): Promise<UserTypeWithAccessToken> {
     try {
         if (!refreshToken) {
             return Promise.reject(getInvalidSessionError())
@@ -97,7 +101,10 @@ async function refresh ({ refreshToken }: RefreshInput): Promise<{ accessToken: 
         user.refreshToken = generateRefreshToken(id)
         await user.save()
 
-        return { accessToken: generateAccessToken(id) }
+        return {
+            ...user.toObject(),
+            accessToken: generateAccessToken(id),
+        }
     } catch (err) {
         throw getInvalidSessionError()
     }
