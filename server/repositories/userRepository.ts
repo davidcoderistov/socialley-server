@@ -5,9 +5,11 @@ import { MongoError } from 'mongodb'
 import {
     generateAccessToken,
     generateRefreshToken,
+    verifyRefreshToken,
     getCustomValidationError,
     getMongoDBServerError,
     getValidationError,
+    getInvalidSessionError,
 } from '../utils'
 
 
@@ -71,7 +73,38 @@ async function login ({ username, password }: LoginInput): Promise<UserType> {
     }
 }
 
+interface RefreshInput {
+    refreshToken: string | undefined
+}
+
+async function refresh ({ refreshToken }: RefreshInput): Promise<{ accessToken: string }> {
+    try {
+        if (!refreshToken) {
+            return Promise.reject(getInvalidSessionError())
+        }
+
+        const decoded = await verifyRefreshToken(refreshToken)
+        const { id, refresh } = decoded as { id: string, refresh?: boolean }
+        if (!id || !refresh) {
+            return Promise.reject(getInvalidSessionError())
+        }
+
+        const user = await User.findById(id)
+        if (!user || user.refreshToken !== refreshToken) {
+            return Promise.reject(getInvalidSessionError())
+        }
+
+        user.refreshToken = generateRefreshToken(id)
+        await user.save()
+
+        return { accessToken: generateAccessToken(id) }
+    } catch (err) {
+        throw getInvalidSessionError()
+    }
+}
+
 export default {
     signUp,
     login,
+    refresh,
 }

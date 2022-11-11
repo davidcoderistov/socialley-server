@@ -43,6 +43,13 @@ const LoginOutput = new GraphQLObjectType({
     })
 })
 
+const RefreshOutput = new GraphQLObjectType({
+    name: 'RefreshOutput',
+    fields: () => ({
+        accessToken: { type: GraphQLString },
+    })
+})
+
 const authMutations:  ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     signUp: {
         type: User,
@@ -58,6 +65,13 @@ const authMutations:  ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             const loggedInUser = await userRepository.login(user)
             setRefreshTokenCookie(loggedInUser.refreshToken)
             return loggedInUser
+        }
+    },
+    refresh: {
+        type: RefreshOutput,
+        resolve: (_, __, { getRefreshTokenCookie }) => {
+            const refreshToken = getRefreshTokenCookie()
+            return userRepository.refresh({ refreshToken })
         }
     }
 }
