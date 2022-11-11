@@ -25,3 +25,7 @@ export function serializeRefreshToken (refreshToken: string) {
     })
 }
 
+export function deserializeRefreshToken (cookies: string): string | undefined {
+    return cookie.parse(cookies)?.refreshToken
+}
+

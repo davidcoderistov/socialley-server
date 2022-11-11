@@ -7,7 +7,7 @@ import { useServer } from 'graphql-ws/lib/use/ws'
 import { ApolloServer } from '@apollo/server'
 import { expressMiddleware } from '@apollo/server/express4'
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer'
-import { serializeRefreshToken } from '../utils'
+import { serializeRefreshToken, deserializeRefreshToken } from '../utils'
 import schema from '../graphql/schema'
 
 
@@ -45,6 +45,9 @@ const setupServer = async () => {
             return {
                 setRefreshTokenCookie (refreshToken: string) {
                     res.setHeader('Set-Cookie',serializeRefreshToken(refreshToken))
+                },
+                getRefreshTokenCookie () {
+                    return deserializeRefreshToken(req.headers.cookie)
                 }
             }
         }
