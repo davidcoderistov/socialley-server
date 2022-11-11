@@ -28,12 +28,6 @@ const UserSchema = new Schema({
     password: {
         type: String,
         required: [true, 'Password is required'],
-        validate: {
-            validator (v) {
-                return v.length >= 8
-            },
-            message: () => 'Password must contain at least 8 characters'
-        }
     },
     refreshToken: String,
 })

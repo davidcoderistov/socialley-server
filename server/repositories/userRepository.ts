@@ -25,6 +25,9 @@ interface SignUpInput {
 
 async function signUp (signUpInput: SignUpInput): Promise<UserType> {
     try {
+        if (signUpInput.password.length < 8) {
+            return Promise.reject(getCustomValidationError('password', 'Password must contain at least 8 characters'))
+        }
         const passwordHash = await bcrypt.hash(signUpInput.password, 10)
         const user = new User({
             username: signUpInput.username,
