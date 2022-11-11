@@ -40,7 +40,7 @@ const setupServer = async () => {
 
     await server.start()
 
-    app.use('/api', cors(), json(), expressMiddleware(server, {
+    app.use('/api', cors({ origin: 'http://localhost:3000', credentials: true }), json(), expressMiddleware(server, {
         context: async ({ req, res }) => {
             return {
                 setRefreshTokenCookie (refreshToken: string) {
