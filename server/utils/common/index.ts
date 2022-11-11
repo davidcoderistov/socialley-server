@@ -16,6 +16,21 @@ export function generateRefreshToken (userId: string): string {
     }, process.env.SECRET_KEY, { expiresIn: '7d' })
 }
 
+export function verifyRefreshToken (refreshToken: string) {
+    return new Promise((resolve, reject) => {
+        jwt.verify(
+            refreshToken,
+            process.env.SECRET_KEY,
+            (err, token) => {
+                if (err) {
+                    reject(err)
+                }
+                resolve(token)
+            }
+        )
+    })
+}
+
 export function serializeRefreshToken (refreshToken: string) {
     return cookie.serialize('refreshToken', refreshToken, {
         httpOnly: true,
