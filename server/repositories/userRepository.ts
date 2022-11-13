@@ -63,7 +63,7 @@ async function login ({ username, password }: LoginInput): Promise<UserTypeWithA
 
         const passwordMatch = await bcrypt.compare(password, user.password)
         if (!passwordMatch) {
-            return Promise.reject(getCustomValidationError('password', 'Passwords do not match'))
+            return Promise.reject(getCustomValidationError('password', 'Wrong password'))
         }
 
         const userId = user._id.toString()
