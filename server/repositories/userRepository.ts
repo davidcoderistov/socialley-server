@@ -40,7 +40,7 @@ async function signUp (signUpInput: SignUpInput): Promise<UserType> {
     } catch (err) {
         if (err instanceof MongoError) {
             if (err.code === 11000) {
-                throw getCustomValidationError('username', 'Username must be unique')
+                throw getCustomValidationError('username', `${signUpInput.username} is already taken`)
             }
         } else if (err instanceof Error.ValidationError) {
             throw getValidationError(err)
