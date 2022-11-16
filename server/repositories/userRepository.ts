@@ -5,7 +5,7 @@ import { MongoError } from 'mongodb'
 import {
     generateAccessToken,
     generateRefreshToken,
-    verifyRefreshToken,
+    verifyToken,
     getCustomValidationError,
     getMongoDBServerError,
     getValidationError,
@@ -90,8 +90,8 @@ async function refresh ({ refreshToken }: RefreshInput): Promise<UserTypeWithAcc
             return Promise.reject(getInvalidSessionError())
         }
 
-        const decoded = await verifyRefreshToken(refreshToken)
-        const { id, refresh } = decoded as { id: string, refresh?: boolean }
+        const decoded = await verifyToken(refreshToken)
+        const { id, refresh } = decoded
         if (!id || !refresh) {
             return Promise.reject(getInvalidSessionError())
         }
@@ -123,8 +123,8 @@ async function logout ({ refreshToken }: LogoutInput): Promise<UserType> {
             return Promise.reject(getInvalidSessionError())
         }
 
-        const decoded = await verifyRefreshToken(refreshToken)
-        const { id, refresh } = decoded as { id: string, refresh?: boolean }
+        const decoded = await verifyToken(refreshToken)
+        const { id, refresh } = decoded
         if (!id || !refresh) {
             return Promise.reject(getInvalidSessionError())
         }

@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken'
 import cookie from 'cookie'
+import { IncomingHttpHeaders } from 'http'
 
 
 export function generateAccessToken (userId: string): string {
@@ -16,10 +17,10 @@ export function generateRefreshToken (userId: string): string {
     }, process.env.SECRET_KEY, { expiresIn: '7d' })
 }
 
-export function verifyRefreshToken (refreshToken: string) {
+export function verifyToken (token: string): Promise<{ id: string, access?: boolean, refresh?: boolean }> {
     return new Promise((resolve, reject) => {
         jwt.verify(
-            refreshToken,
+            token,
             process.env.SECRET_KEY,
             (err, token) => {
                 if (err) {
@@ -42,5 +43,19 @@ export function serializeRefreshToken (refreshToken: string, immediate: boolean 
 
 export function deserializeRefreshToken (cookies: string): string | undefined {
     return cookie.parse(cookies)?.refreshToken
+}
+
+export async function getUserIdFromAuthHeader (headers: IncomingHttpHeaders): Promise<string | null> {
+    const { authorization } = headers
+    if (authorization && authorization.startsWith('Bearer')) {
+        const accessToken = authorization.slice(7).trim()
+        try {
+            const decoded = await verifyToken(accessToken)
+            if (decoded.id && decoded.access) {
+                return decoded.id
+            }
+        } catch {}
+    }
+    return null
 }
 
