@@ -4,10 +4,11 @@ import cors from 'cors'
 import { json } from 'body-parser'
 import { WebSocketServer } from 'ws'
 import { useServer } from 'graphql-ws/lib/use/ws'
-import { ApolloServer } from '@apollo/server'
+import { ApolloServer, GraphQLRequestContextDidResolveOperation } from '@apollo/server'
 import { expressMiddleware } from '@apollo/server/express4'
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer'
-import { serializeRefreshToken, deserializeRefreshToken } from '../utils'
+import { serializeRefreshToken, deserializeRefreshToken, getUserIdFromAuthHeader, getInvalidSessionError } from '../utils'
+import { Context } from '../graphql/types'
 import schema from '../graphql/schema'
 
 
@@ -33,6 +34,25 @@ const setupServer = async () => {
                             await serverCleanup.dispose()
                         }
                     }
+                },
+                async requestDidStart () {
+                    return {
+                        async didResolveOperation (requestContext: GraphQLRequestContextDidResolveOperation<Context>) {
+                            switch (requestContext.operationName) {
+                                case 'signUp':
+                                    return
+                                case 'login':
+                                    return
+                                case 'refresh':
+                                    return
+                                case 'logout':
+                                    return
+                            }
+                            if (!requestContext.contextValue.userId) {
+                                throw getInvalidSessionError()
+                            }
+                        }
+                    }
                 }
             }
         ]
@@ -48,7 +68,8 @@ const setupServer = async () => {
                 },
                 getRefreshTokenCookie () {
                     return deserializeRefreshToken(req.headers.cookie)
-                }
+                },
+                userId: await getUserIdFromAuthHeader(req.headers)
             }
         }
     }))
