@@ -4,6 +4,7 @@ import {
 } from 'graphql'
 import userQueries from './queries/user'
 import authMutations from './mutations/auth'
+import messagesMutations from './mutations/messages'
 
 
 const RootQuery = new GraphQLObjectType({
@@ -17,6 +18,7 @@ const RootMutation = new GraphQLObjectType({
     name: 'RootMutation',
     fields: {
         ...authMutations,
+        ...messagesMutations,
     }
 })
 
