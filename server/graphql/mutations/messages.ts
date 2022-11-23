@@ -9,6 +9,7 @@ import Message from '../models/Message'
 import messagesRepository from '../../repositories/messagesRepository'
 import { Context } from '../types'
 import { pubsub } from '../../config/server'
+import { MESSAGES_SUBSCRIPTIONS } from '../subscriptions/messages'
 
 
 const CreateInput = new GraphQLInputObjectType({
