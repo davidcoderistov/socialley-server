@@ -30,7 +30,7 @@ const messagesMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
                 to: message.to,
                 message: message.message,
             })
-            pubsub.publish('MESSAGE_CREATED', createdMessage)
+            pubsub.publish(MESSAGES_SUBSCRIPTIONS.MESSAGE_CREATED, createdMessage)
             return createdMessage
         }
     }
