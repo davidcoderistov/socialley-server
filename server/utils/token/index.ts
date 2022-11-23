@@ -59,3 +59,16 @@ export async function getUserIdFromAuthHeader (headers: IncomingHttpHeaders): Pr
     return null
 }
 
+export async function getUserIdFromConnectionParams (params: any): Promise<string | null> {
+    const accessToken = params?.accessToken
+    if (accessToken) {
+        try {
+            const decoded = await verifyToken(accessToken)
+            if (decoded.id && decoded.access) {
+                return decoded.id
+            }
+        } catch {}
+    }
+    return null
+}
+
