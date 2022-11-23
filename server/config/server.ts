@@ -7,10 +7,19 @@ import { useServer } from 'graphql-ws/lib/use/ws'
 import { ApolloServer, GraphQLRequestContextDidResolveOperation } from '@apollo/server'
 import { expressMiddleware } from '@apollo/server/express4'
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer'
-import { serializeRefreshToken, deserializeRefreshToken, getUserIdFromAuthHeader, getInvalidSessionError } from '../utils'
+import {
+    serializeRefreshToken,
+    deserializeRefreshToken,
+    getUserIdFromAuthHeader,
+    getUserIdFromConnectionParams,
+    getInvalidSessionError
+} from '../utils'
 import { Context } from '../graphql/types'
 import schema from '../graphql/schema'
+import { PubSub } from 'graphql-subscriptions'
 
+
+export const pubsub = new PubSub()
 
 const setupServer = async () => {
     const app = express()
@@ -21,7 +30,16 @@ const setupServer = async () => {
         path: '/api',
     })
 
-    const serverCleanup = useServer({ schema }, wsServer)
+    const serverCleanup = useServer({
+        schema,
+        context: async (ctx) => {
+            const userId = await getUserIdFromConnectionParams(ctx.connectionParams)
+            if (!userId) {
+                throw getInvalidSessionError()
+            }
+            return { userId }
+        }
+    }, wsServer)
 
     const server = new ApolloServer({
         schema,
