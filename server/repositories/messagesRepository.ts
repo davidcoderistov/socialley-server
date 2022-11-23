@@ -1,4 +1,4 @@
-import Message from '../models/Message'
+import Message, { MessageType } from '../models/Message'
 import User from '../models/User'
 import { Error } from 'mongoose'
 import { getValidationError, getCustomValidationError } from '../utils'
@@ -10,7 +10,7 @@ interface CreateInput {
     message: string
 }
 
-async function create (createInput: CreateInput) {
+async function createMessage (createInput: CreateInput): Promise<MessageType> {
     try {
         if (!await User.findById(createInput.to)) {
             return Promise.reject(getCustomValidationError('to', `User with id ${createInput.to} does not exist`))
@@ -27,5 +27,5 @@ async function create (createInput: CreateInput) {
 }
 
 export default {
-    create,
+    createMessage,
 }
