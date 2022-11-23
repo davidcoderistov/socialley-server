@@ -5,3 +5,7 @@ export interface Context {
     getRefreshTokenCookie: () => string | undefined
     userId: string | null
 }
+
+export interface WsContext {
+    userId: string
+}
