@@ -8,6 +8,7 @@ import {
 import Message from '../models/Message'
 import messagesRepository from '../../repositories/messagesRepository'
 import { Context } from '../types'
+import { pubsub } from '../../config/server'
 
 
 const CreateInput = new GraphQLInputObjectType({
@@ -22,12 +23,14 @@ const messagesMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     createMessage: {
         type: Message,
         args: { message: { type: CreateInput }},
-        resolve: (_, { message }, { userId }) => {
-            return messagesRepository.create({
+        resolve: async (_, { message }, { userId }) => {
+            const createdMessage = await messagesRepository.createMessage({
                 from: userId,
                 to: message.to,
                 message: message.message,
             })
+            pubsub.publish('MESSAGE_CREATED', createdMessage)
+            return createdMessage
         }
     }
 }
