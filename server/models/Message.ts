@@ -10,10 +10,12 @@ const MessageSchema = new Schema({
     fromUserId: {
         type: Schema.Types.String,
         required: true,
+        ref: 'User',
     },
     toUserId: {
         type: Schema.Types.String,
         required: true,
+        ref: 'User',
     },
     message: Schema.Types.String,
     photoURL: Schema.Types.String,
