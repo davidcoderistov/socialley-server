@@ -20,7 +20,7 @@ const messagesSubscriptions: ThunkObjMap<GraphQLFieldConfig<any, WsContext>> = {
         subscribe: withFilter(
             () => pubsub.asyncIterator([MESSAGES_SUBSCRIPTIONS.MESSAGE_CREATED]),
             (payload: MessageType, variables, { userId }: WsContext) => {
-                return payload.to === userId
+                return payload.toUserId === userId
             }
         )
     }
