@@ -10,9 +10,10 @@ const Message = new GraphQLObjectType({
     name: 'Message',
     fields: () => ({
         _id: { type: new GraphQLNonNull(GraphQLID) },
-        from: { type: new GraphQLNonNull(GraphQLString) },
-        to: { type: new GraphQLNonNull(GraphQLString) },
-        message: { type: new GraphQLNonNull(GraphQLString) },
+        fromUserId: { type: new GraphQLNonNull(GraphQLString) },
+        toUserId: { type: new GraphQLNonNull(GraphQLString) },
+        message: { type: GraphQLString },
+        photoURL: { type: GraphQLString },
     })
 })
 
