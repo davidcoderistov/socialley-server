@@ -33,7 +33,7 @@ async function createMessage ({ fromUserId, toUserId, message, photoURL }: Creat
 }
 
 async function getLatestMessages ({ userId }: { userId: string }) {
-    return Message.aggregate([
+    const messages = await Message.aggregate([
         {
             $match: {
                 $or: [
@@ -124,6 +124,9 @@ async function getLatestMessages ({ userId }: { userId: string }) {
             }
         }
     ])
+
+    return Promise.all(messages.map(message =>
+        Message.populate(message, { path: message.fromUserId === userId ? 'toUserId' : 'fromUserId' })))
 }
 
 export default {
