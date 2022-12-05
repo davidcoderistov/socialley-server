@@ -14,6 +14,7 @@ const Message = new GraphQLObjectType({
         toUserId: { type: new GraphQLNonNull(GraphQLString) },
         message: { type: GraphQLString },
         photoURL: { type: GraphQLString },
+        createdAt: { type: new GraphQLNonNull(GraphQLString) },
     })
 })
 
