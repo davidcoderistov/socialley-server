@@ -4,19 +4,25 @@ import { Error } from 'mongoose'
 import { getValidationError, getCustomValidationError } from '../utils'
 
 
-interface CreateInput {
-    from: string
-    to: string
-    message: string
+interface CreateMessageInput {
+    fromUserId: string
+    toUserId: string
+    message?: string
+    photoURL?: string
 }
 
-async function createMessage (createInput: CreateInput): Promise<MessageType> {
+async function createMessage ({ fromUserId, toUserId, message, photoURL }: CreateMessageInput): Promise<MessageType> {
     try {
-        if (!await User.findById(createInput.to)) {
-            return Promise.reject(getCustomValidationError('to', `User with id ${createInput.to} does not exist`))
+        if (!await User.findById(toUserId)) {
+            return Promise.reject(getCustomValidationError('to', `User with id ${toUserId} does not exist`))
         }
-        const message = new Message(createInput)
-        return await message.save()
+        const createdMessage = new Message({
+            fromUserId,
+            toUserId,
+            message,
+            photoURL,
+        })
+        return await createdMessage.save()
     } catch (err) {
         if (err instanceof Error.ValidationError) {
             throw getValidationError(err)
@@ -26,6 +32,101 @@ async function createMessage (createInput: CreateInput): Promise<MessageType> {
     }
 }
 
+async function getLatestMessages ({ userId }: { userId: string }) {
+    return Message.aggregate([
+        {
+            $match: {
+                $or: [
+                    {
+                        toUserId: userId,
+                    },
+                    {
+                        fromUserId: userId,
+                    }
+                ]
+            }
+        },
+        {
+            $project: {
+                fromUserId: 1,
+                toUserId: 1,
+                message: 1,
+                photoURL: 1,
+                createdAt: 1,
+                fromToUser: [
+                    '$fromUserId',
+                    '$toUserId',
+                ]
+            }
+        },
+        {
+            $unwind: '$fromToUser'
+        },
+        {
+            $sort: {
+                'fromToUser': 1
+            }
+        },
+        {
+            $group: {
+                _id: '$_id',
+                fromToUser: {
+                    $push: '$fromToUser'
+                },
+                fromUserId: {
+                    $first: '$fromUserId'
+                },
+                toUserId: {
+                    $first: '$toUserId'
+                },
+                message: {
+                    $first: '$message'
+                },
+                photoURL: {
+                    $first: '$photoURL'
+                },
+                createdAt: {
+                    $first: '$createdAt'
+                }
+            }
+        },
+        {
+            $sort: {
+                createdAt: -1
+            }
+        },
+        {
+            $group: {
+                _id: '$fromToUser',
+                fromUserId: {
+                    $first: '$fromUserId'
+                },
+                toUserId: {
+                    $first: '$toUserId'
+                },
+                message: {
+                    $first: '$message'
+                },
+                photoURL: {
+                    $first: '$photoURL'
+                },
+                messageId: {
+                    $first: '$_id'
+                },
+                createdAt: {
+                    $first: '$createdAt'
+                }
+            }
+        },
+        {
+            $sort: {
+                createdAt: -1
+            }
+        }
+    ])
+}
+
 export default {
     createMessage,
+    getLatestMessages,
 }
