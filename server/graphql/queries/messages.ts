@@ -3,9 +3,11 @@ import {
     GraphQLFieldConfig,
     GraphQLList,
     GraphQLObjectType,
+    GraphQLInputObjectType,
     GraphQLNonNull,
     GraphQLID,
     GraphQLString,
+    GraphQLInt,
 } from 'graphql'
 import { Context } from '../types'
 import messagesRepository from '../../repositories/messagesRepository'
@@ -32,16 +34,28 @@ const LatestMessage = new GraphQLObjectType({
     })
 })
 
+const LatestMessagesPaginationData = new GraphQLInputObjectType({
+    name: 'LatestMessagesPaginationData',
+    fields: () => ({
+        offset: { type: new GraphQLNonNull(GraphQLInt )},
+        limit: { type: new GraphQLNonNull(GraphQLInt) },
+    })
+})
+
+const LatestMessagesOutput = new GraphQLObjectType({
+    name: 'LatestMessagesOutput',
+    fields: () => ({
+        total: { type: new GraphQLNonNull(GraphQLInt) },
+        data: { type: new GraphQLList(LatestMessage) },
+    })
+})
+
 const messagesQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     getLatestMessages: {
-        type: new GraphQLList(LatestMessage),
-        resolve: async (_, __, { userId }) => {
-            const latest = await messagesRepository.getLatestMessages({ userId })
-            return latest.map(message => ({
-                ...message,
-                fromUser: typeof message.fromUserId === 'string' ? { _id: message.fromUserId } : message.fromUserId,
-                toUser: typeof message.toUserId === 'string' ? { _id: message.toUserId } : message.toUserId,
-            }))
+        type: LatestMessagesOutput,
+        args: { paginationData: { type: LatestMessagesPaginationData }},
+        resolve: (_, { paginationData: { offset, limit }}, { userId }) => {
+            return messagesRepository.getLatestMessages({ userId, offset, limit })
         }
     }
 }
