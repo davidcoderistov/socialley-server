@@ -1,5 +1,5 @@
 import Message, { MessageType } from '../models/Message'
-import User from '../models/User'
+import User, { UserType } from '../models/User'
 import { Error } from 'mongoose'
 import { getValidationError, getCustomValidationError } from '../utils'
 
@@ -32,8 +32,8 @@ async function createMessage ({ fromUserId, toUserId, message, photoURL }: Creat
     }
 }
 
-async function getLatestMessages ({ userId }: { userId: string }) {
-    const messages = await Message.aggregate([
+async function getLatestMessages ({ userId, offset, limit }: { userId: string, offset: number, limit: number }) {
+    const aggregateData = await Message.aggregate([
         {
             $match: {
                 $or: [
@@ -122,11 +122,39 @@ async function getLatestMessages ({ userId }: { userId: string }) {
             $sort: {
                 createdAt: -1
             }
+        },
+        {
+            $facet: {
+                metadata: [{
+                    $count: 'count'
+                }],
+                data: [{
+                    $skip: offset,
+                }, {
+                    $limit: limit,
+                }]
+            }
         }
     ])
 
-    return Promise.all(messages.map(message =>
-        Message.populate(message, { path: message.fromUserId === userId ? 'toUserId' : 'fromUserId' })))
+    const messages = await Message.populate(aggregateData[0].data, 'fromUserId toUserId') as unknown as Array<{
+        _id: string
+        fromUserId: UserType,
+        toUserId: UserType,
+        message: string,
+        photoURL: string,
+        messageId: string
+        createdAt: string
+    }>
+
+    return {
+        total: aggregateData[0].metadata[0].count,
+        data: messages.map(message => ({
+            ...message,
+            fromUser: message.fromUserId,
+            toUser: message.toUserId,
+        })),
+    }
 }
 
 export default {
