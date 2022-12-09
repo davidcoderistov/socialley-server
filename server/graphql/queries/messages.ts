@@ -9,6 +9,7 @@ import {
     GraphQLString,
     GraphQLInt,
 } from 'graphql'
+import { DateScalar } from '../scalars'
 import { Context } from '../types'
 import messagesRepository from '../../repositories/messagesRepository'
 
@@ -30,7 +31,7 @@ const LatestMessage = new GraphQLObjectType({
         toUser: { type: LatestMessageUser },
         message: { type: GraphQLString },
         photoURL: { type: GraphQLString },
-        createdAt: { type: new GraphQLNonNull(GraphQLString) },
+        createdAt: { type: new GraphQLNonNull(DateScalar) },
     })
 })
 
