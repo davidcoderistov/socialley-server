@@ -9,33 +9,33 @@ import messagesMutations from './mutations/messages'
 import messagesSubscriptions from './subscriptions/messages'
 
 
-const RootQuery = new GraphQLObjectType({
-    name: 'RootQuery',
+const Query = new GraphQLObjectType({
+    name: 'Query',
     fields: {
         ...userQueries,
         ...messagesQueries,
     },
 })
 
-const RootMutation = new GraphQLObjectType({
-    name: 'RootMutation',
+const Mutation = new GraphQLObjectType({
+    name: 'Mutation',
     fields: {
         ...authMutations,
         ...messagesMutations,
     }
 })
 
-const RootSubscription = new GraphQLObjectType({
-    name: 'RootSubscription',
+const Subscription = new GraphQLObjectType({
+    name: 'Subscription',
     fields: {
         ...messagesSubscriptions,
     }
 })
 
 const schema = new GraphQLSchema({
-    query: RootQuery,
-    mutation: RootMutation,
-    subscription: RootSubscription,
+    query: Query,
+    mutation: Mutation,
+    subscription: Subscription,
 })
 
 export default schema
