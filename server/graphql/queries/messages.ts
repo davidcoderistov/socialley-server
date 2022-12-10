@@ -3,7 +3,6 @@ import {
     GraphQLFieldConfig,
     GraphQLList,
     GraphQLObjectType,
-    GraphQLInputObjectType,
     GraphQLNonNull,
     GraphQLID,
     GraphQLString,
@@ -35,14 +34,6 @@ const LatestMessage = new GraphQLObjectType({
     })
 })
 
-const LatestMessagesPaginationData = new GraphQLInputObjectType({
-    name: 'LatestMessagesPaginationData',
-    fields: () => ({
-        offset: { type: new GraphQLNonNull(GraphQLInt )},
-        limit: { type: new GraphQLNonNull(GraphQLInt) },
-    })
-})
-
 const LatestMessagesOutput = new GraphQLObjectType({
     name: 'LatestMessagesOutput',
     fields: () => ({
@@ -54,8 +45,8 @@ const LatestMessagesOutput = new GraphQLObjectType({
 const messagesQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     getLatestMessages: {
         type: LatestMessagesOutput,
-        args: { paginationData: { type: LatestMessagesPaginationData }},
-        resolve: (_, { paginationData: { offset, limit }}, { userId }) => {
+        args: { offset: { type: new GraphQLNonNull(GraphQLInt )}, limit: { type: new GraphQLNonNull(GraphQLInt) } },
+        resolve: (_, { offset, limit }, { userId }) => {
             return messagesRepository.getLatestMessages({ userId, offset, limit })
         }
     }
