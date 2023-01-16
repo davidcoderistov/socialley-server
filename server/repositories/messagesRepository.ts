@@ -157,7 +157,53 @@ async function getLatestMessages ({ userId, offset, limit }: { userId: string, o
     }
 }
 
+async function getLatestChatMessages ({ users, offset, limit }: { users: [string, string], offset: number, limit: number }) {
+    const aggregateData = await Message.aggregate([
+        {
+            $match: {
+                $or: [
+                    {
+                        $and: [
+                            { fromUserId: users[0] },
+                            { toUserId: users[1] }
+                        ]
+                    },
+                    {
+                        $and: [
+                            { fromUserId: users[1] },
+                            { toUserId: users[0] }
+                        ]
+                    },
+                ]
+            },
+        },
+        {
+            $sort: {
+                createdAt: -1
+            }
+        },
+        {
+            $facet: {
+                metadata: [{
+                    $count: 'count'
+                }],
+                data: [{
+                    $skip: offset,
+                }, {
+                    $limit: limit,
+                }]
+            }
+        }
+    ])
+
+    return {
+        total: aggregateData[0].metadata[0].count,
+        data: aggregateData[0].data,
+    }
+}
+
 export default {
     createMessage,
     getLatestMessages,
+    getLatestChatMessages,
 }
