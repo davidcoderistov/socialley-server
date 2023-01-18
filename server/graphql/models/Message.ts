@@ -4,6 +4,7 @@ import {
     GraphQLString,
     GraphQLNonNull,
 } from 'graphql'
+import { DateScalar } from '../scalars'
 
 
 const Message = new GraphQLObjectType({
@@ -14,7 +15,7 @@ const Message = new GraphQLObjectType({
         toUserId: { type: new GraphQLNonNull(GraphQLString) },
         message: { type: GraphQLString },
         photoURL: { type: GraphQLString },
-        createdAt: { type: new GraphQLNonNull(GraphQLString) },
+        createdAt: { type: new GraphQLNonNull(DateScalar) },
     })
 })
 
