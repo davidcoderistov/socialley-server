@@ -1,9 +1,7 @@
-import Message, { MessageType } from '../models/Message'
+import Message from '../models/Message'
 import User, { UserType } from '../models/User'
 import { Error } from 'mongoose'
 import { getValidationError, getCustomValidationError } from '../utils'
-import { pubsub } from '../config/server'
-import { MESSAGES_SUBSCRIPTIONS } from '../graphql/subscriptions/messages'
 
 
 interface CreateMessageInput {
@@ -13,7 +11,7 @@ interface CreateMessageInput {
     photoURL?: string
 }
 
-async function createMessage ({ fromUserId, toUserId, message, photoURL }: CreateMessageInput): Promise<MessageType> {
+async function createMessage ({ fromUserId, toUserId, message, photoURL }: CreateMessageInput) {
     try {
         if (!await User.findById(toUserId)) {
             return Promise.reject(getCustomValidationError('to', `User with id ${toUserId} does not exist`))
@@ -24,7 +22,20 @@ async function createMessage ({ fromUserId, toUserId, message, photoURL }: Creat
             message,
             photoURL,
         })
-        return await createdMessage.save()
+        await createdMessage.save()
+        const populatedMessage = await Message.populate(message, 'fromUserId toUserId') as unknown as {
+            _id: string
+            fromUserId: UserType
+            toUserId: UserType
+            message: string | null
+            photoURL: string | null
+            createdAt: number
+        }
+        return {
+            ...populatedMessage,
+            fromUser: populatedMessage.fromUserId,
+            toUser: populatedMessage.toUserId
+        }
     } catch (err) {
         if (err instanceof Error.ValidationError) {
             throw getValidationError(err)
@@ -32,24 +43,6 @@ async function createMessage ({ fromUserId, toUserId, message, photoURL }: Creat
             throw err
         }
     }
-}
-
-async function publishMessage (message: MessageType) {
-    const populatedMessage = await Message.populate(message, 'fromUserId') as unknown as {
-        _id: string
-        fromUserId: UserType
-        toUserId: string
-        message: string | null
-        photoURL: string | null
-        createdAt: number
-    }
-    console.log(message)
-    const published = {
-        ...populatedMessage,
-        fromUser: populatedMessage.fromUserId,
-    }
-    pubsub.publish(MESSAGES_SUBSCRIPTIONS.MESSAGE_CREATED, published)
-    return published
 }
 
 async function getLatestMessages ({ userId, offset, limit }: { userId: string, offset: number, limit: number }) {
@@ -227,7 +220,6 @@ async function getLatestChatMessages ({ users, offset, limit }: { users: [string
 
 export default {
     createMessage,
-    publishMessage,
     getLatestMessages,
     getLatestChatMessages,
 }
