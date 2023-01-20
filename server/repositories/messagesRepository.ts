@@ -1,6 +1,6 @@
 import Message from '../models/Message'
 import User, { UserType } from '../models/User'
-import { Error } from 'mongoose'
+import { Error, Document } from 'mongoose'
 import { getValidationError, getCustomValidationError } from '../utils'
 
 
@@ -9,6 +9,11 @@ interface CreateMessageInput {
     toUserId: string
     message?: string
     photoURL?: string
+}
+
+interface Message extends Document {
+    fromUserId: UserType
+    toUserId: UserType
 }
 
 async function createMessage ({ fromUserId, toUserId, message, photoURL }: CreateMessageInput) {
@@ -23,16 +28,9 @@ async function createMessage ({ fromUserId, toUserId, message, photoURL }: Creat
             photoURL,
         })
         await createdMessage.save()
-        const populatedMessage = await Message.populate(message, 'fromUserId toUserId') as unknown as {
-            _id: string
-            fromUserId: UserType
-            toUserId: UserType
-            message: string | null
-            photoURL: string | null
-            createdAt: number
-        }
+        const populatedMessage = await Message.populate(createdMessage, 'fromUserId toUserId') as unknown as Message
         return {
-            ...populatedMessage,
+            ...populatedMessage.toObject(),
             fromUser: populatedMessage.fromUserId,
             toUser: populatedMessage.toUserId
         }
