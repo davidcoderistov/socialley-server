@@ -19,8 +19,8 @@ const LatestMessage = new GraphQLObjectType({
     name: 'LatestMessage',
     fields: () => ({
         messageId: { type: new GraphQLNonNull(GraphQLID) },
-        fromUser: { type: PublicUser },
-        toUser: { type: PublicUser },
+        fromUser: { type: new GraphQLNonNull(PublicUser) },
+        toUser: { type: new GraphQLNonNull(PublicUser) },
         message: { type: GraphQLString },
         photoURL: { type: GraphQLString },
         createdAt: { type: new GraphQLNonNull(DateScalar) },
