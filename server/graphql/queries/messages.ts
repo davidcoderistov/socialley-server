@@ -4,34 +4,20 @@ import {
     GraphQLList,
     GraphQLObjectType,
     GraphQLNonNull,
-    GraphQLID,
     GraphQLString,
     GraphQLInt,
 } from 'graphql'
+import FullMessage from '../models/FullMessage'
 import Message from '../models/Message'
-import PublicUser from '../models/PublicUser'
-import { DateScalar } from '../scalars'
 import { Context } from '../types'
 import messagesRepository from '../../repositories/messagesRepository'
 
-
-const LatestMessage = new GraphQLObjectType({
-    name: 'LatestMessage',
-    fields: () => ({
-        messageId: { type: new GraphQLNonNull(GraphQLID) },
-        fromUser: { type: new GraphQLNonNull(PublicUser) },
-        toUser: { type: new GraphQLNonNull(PublicUser) },
-        message: { type: GraphQLString },
-        photoURL: { type: GraphQLString },
-        createdAt: { type: new GraphQLNonNull(DateScalar) },
-    })
-})
 
 const LatestMessagesOutput = new GraphQLObjectType({
     name: 'LatestMessagesOutput',
     fields: () => ({
         total: { type: new GraphQLNonNull(GraphQLInt) },
-        data: { type: new GraphQLList(LatestMessage) },
+        data: { type: new GraphQLList(FullMessage) },
     })
 })
 

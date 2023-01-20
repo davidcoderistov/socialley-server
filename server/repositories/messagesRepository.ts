@@ -2,6 +2,8 @@ import Message, { MessageType } from '../models/Message'
 import User, { UserType } from '../models/User'
 import { Error } from 'mongoose'
 import { getValidationError, getCustomValidationError } from '../utils'
+import { pubsub } from '../config/server'
+import { MESSAGES_SUBSCRIPTIONS } from '../graphql/subscriptions/messages'
 
 
 interface CreateMessageInput {
@@ -30,6 +32,24 @@ async function createMessage ({ fromUserId, toUserId, message, photoURL }: Creat
             throw err
         }
     }
+}
+
+async function publishMessage (message: MessageType) {
+    const populatedMessage = await Message.populate(message, 'fromUserId') as unknown as {
+        _id: string
+        fromUserId: UserType
+        toUserId: string
+        message: string | null
+        photoURL: string | null
+        createdAt: number
+    }
+    console.log(message)
+    const published = {
+        ...populatedMessage,
+        fromUser: populatedMessage.fromUserId,
+    }
+    pubsub.publish(MESSAGES_SUBSCRIPTIONS.MESSAGE_CREATED, published)
+    return published
 }
 
 async function getLatestMessages ({ userId, offset, limit }: { userId: string, offset: number, limit: number }) {
@@ -150,9 +170,12 @@ async function getLatestMessages ({ userId, offset, limit }: { userId: string, o
     return {
         total: aggregateData[0].metadata[0].count,
         data: messages.map(message => ({
-            ...message,
+            _id: message.messageId,
             fromUser: message.fromUserId,
             toUser: message.toUserId,
+            message: message.message,
+            photoURL: message.photoURL,
+            createdAt: message.createdAt
         })),
     }
 }
@@ -204,6 +227,7 @@ async function getLatestChatMessages ({ users, offset, limit }: { users: [string
 
 export default {
     createMessage,
+    publishMessage,
     getLatestMessages,
     getLatestChatMessages,
 }
