@@ -2,8 +2,7 @@ import {
     ThunkObjMap,
     GraphQLFieldConfig,
 } from 'graphql'
-import Message from '../models/Message'
-import { MessageType } from '../../models/Message'
+import FullMessage from '../models/FullMessage'
 import { pubsub } from '../../config/server'
 import { WsContext } from '../types'
 import { withFilter } from 'graphql-subscriptions'
@@ -15,12 +14,12 @@ export const MESSAGES_SUBSCRIPTIONS = {
 
 const messagesSubscriptions: ThunkObjMap<GraphQLFieldConfig<any, WsContext>> = {
     messageCreated: {
-        type: Message,
+        type: FullMessage,
         resolve: message => message,
         subscribe: withFilter(
             () => pubsub.asyncIterator([MESSAGES_SUBSCRIPTIONS.MESSAGE_CREATED]),
-            (payload: MessageType, variables, { userId }: WsContext) => {
-                return payload.toUserId === userId
+            (payload: { toUser: { _id: string }}, variables, { userId }: WsContext) => {
+                return payload.toUser._id === userId
             }
         )
     }
