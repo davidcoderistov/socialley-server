@@ -3,29 +3,14 @@ import {
     GraphQLFieldConfig,
     GraphQLInputObjectType,
     GraphQLNonNull,
-    GraphQLObjectType,
-    GraphQLID,
     GraphQLString,
 } from 'graphql'
-import { DateScalar } from '../scalars'
+import FullMessage from '../models/FullMessage'
 import messagesRepository from '../../repositories/messagesRepository'
 import { Context } from '../types'
 import { pubsub } from '../../config/server'
 import { MESSAGES_SUBSCRIPTIONS } from '../subscriptions/messages'
-import PublicUser from "../models/PublicUser";
 
-
-const CreatedMessage = new GraphQLObjectType({
-    name: 'CreatedMessage',
-    fields: () => ({
-        _id: { type: new GraphQLNonNull(GraphQLID) },
-        fromUser: { type: new GraphQLNonNull(PublicUser) },
-        toUser: { type: new GraphQLNonNull(PublicUser) },
-        message: { type: GraphQLString },
-        photoURL: { type: GraphQLString },
-        createdAt: { type: new GraphQLNonNull(DateScalar) },
-    })
-})
 
 const CreateMessageInput = new GraphQLInputObjectType({
     name: 'CreateMessageInput',
@@ -38,7 +23,7 @@ const CreateMessageInput = new GraphQLInputObjectType({
 
 const messagesMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     createMessage: {
-        type: CreatedMessage,
+        type: FullMessage,
         args: { message: { type: CreateMessageInput }},
         resolve: async (_, { message }, { userId }) => {
             const createdMessage = await messagesRepository.createMessage({
