@@ -6,6 +6,7 @@ import FullMessage from '../models/FullMessage'
 import { pubsub } from '../../config/server'
 import { WsContext } from '../types'
 import { withFilter } from 'graphql-subscriptions'
+import { Types } from 'mongoose'
 
 
 export const MESSAGES_SUBSCRIPTIONS = {
@@ -17,9 +18,9 @@ const messagesSubscriptions: ThunkObjMap<GraphQLFieldConfig<any, WsContext>> = {
         type: FullMessage,
         resolve: message => message,
         subscribe: withFilter(
-            () => pubsub.asyncIterator([MESSAGES_SUBSCRIPTIONS.MESSAGE_CREATED]),
-            (payload: { toUser: { _id: string }}, variables, { userId }: WsContext) => {
-                return payload.toUser._id === userId
+            () => pubsub.asyncIterator(MESSAGES_SUBSCRIPTIONS.MESSAGE_CREATED),
+            (payload: { toUser: { _id: Types.ObjectId }}, variables, { userId }: WsContext) => {
+                return payload.toUser._id.toString() === userId
             }
         )
     }
