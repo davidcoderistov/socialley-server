@@ -141,9 +141,21 @@ async function logout ({ refreshToken }: LogoutInput): Promise<UserType> {
     }
 }
 
+async function findUsersBySearchQuery ({ searchQuery, limit }: { searchQuery: string, limit: number }) {
+    const regex = new RegExp(searchQuery, 'i')
+    return User.find({
+        $or: [
+            { firstName: { $regex: regex } },
+            { lastName: { $regex: regex } },
+            { username: { $regex: regex } }
+        ]
+    }).limit(limit)
+}
+
 export default {
     signUp,
     login,
     refresh,
     logout,
+    findUsersBySearchQuery,
 }
