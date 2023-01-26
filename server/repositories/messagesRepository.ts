@@ -43,6 +43,53 @@ async function createMessage ({ fromUserId, toUserId, message, photoURL }: Creat
     }
 }
 
+async function getLatestMessage ({ users }: { users: [string, string]}) {
+    const aggregateData = await Message.aggregate([
+        {
+            $match: {
+                $or: [
+                    {
+                        $and: [
+                            { fromUserId: users[0] },
+                            { toUserId: users[1] }
+                        ]
+                    },
+                    {
+                        $and: [
+                            { fromUserId: users[1] },
+                            { toUserId: users[0] }
+                        ]
+                    },
+                ]
+            },
+        },
+        {
+            $sort: {
+                createdAt: -1
+            }
+        }
+    ])
+    if (Array.isArray(aggregateData) && aggregateData.length > 0) {
+        const message = await Message.populate(aggregateData[0], 'fromUserId toUserId') as unknown as {
+            _id: string
+            fromUserId: UserType,
+            toUserId: UserType,
+            message: string,
+            photoURL: string,
+            createdAt: string
+        }
+        return {
+            _id: message._id,
+            fromUser: message.fromUserId,
+            toUser: message.toUserId,
+            message: message.message,
+            photoURL: message.photoURL,
+            createdAt: message.createdAt
+        }
+    }
+    return null
+}
+
 async function getLatestMessages ({ userId, offset, limit }: { userId: string, offset: number, limit: number }) {
     const aggregateData = await Message.aggregate([
         {
@@ -218,6 +265,7 @@ async function getLatestChatMessages ({ users, offset, limit }: { users: [string
 
 export default {
     createMessage,
+    getLatestMessage,
     getLatestMessages,
     getLatestChatMessages,
 }
