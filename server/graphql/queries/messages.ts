@@ -30,6 +30,13 @@ const LatestChatMessagesOutput = new GraphQLObjectType({
 })
 
 const messagesQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
+    getLatestMessage: {
+        type: FullMessage,
+        args: { userId: { type: new GraphQLNonNull(GraphQLString) }},
+        resolve: (_, { userId }, { userId: loggedInUserId }) => {
+            return messagesRepository.getLatestMessage({ users: [loggedInUserId, userId] })
+        }
+    },
     getLatestMessages: {
         type: LatestMessagesOutput,
         args: { offset: { type: new GraphQLNonNull(GraphQLInt )}, limit: { type: new GraphQLNonNull(GraphQLInt) } },
