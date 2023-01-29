@@ -21,6 +21,13 @@ const LatestMessagesOutput = new GraphQLObjectType({
     })
 })
 
+const LatestMessagesCountOutput = new GraphQLObjectType({
+    name: 'LatestMessagesCountOutput',
+    fields: () => ({
+        count: { type: new GraphQLNonNull(GraphQLInt) }
+    })
+})
+
 const LatestChatMessagesOutput = new GraphQLObjectType({
     name: 'LatestChatMessagesOutput',
     fields: () => ({
@@ -42,6 +49,12 @@ const messagesQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         args: { offset: { type: new GraphQLNonNull(GraphQLInt )}, limit: { type: new GraphQLNonNull(GraphQLInt) } },
         resolve: (_, { offset, limit }, { userId }) => {
             return messagesRepository.getLatestMessages({ userId, offset, limit })
+        }
+    },
+    getLatestMessagesCount: {
+        type: LatestMessagesCountOutput,
+        resolve: (_, __, { userId }) => {
+            return messagesRepository.getLatestMessagesCount({ userId })
         }
     },
     getLatestChatMessages: {
