@@ -218,6 +218,99 @@ async function getLatestMessages ({ userId, offset, limit }: { userId: string, o
     }
 }
 
+async function getLatestMessagesCount ({ userId }: { userId: string }) {
+    const aggregateData = await Message.aggregate([
+        {
+            $match: {
+                $or: [
+                    {
+                        toUserId: userId,
+                    },
+                    {
+                        fromUserId: userId,
+                    }
+                ]
+            }
+        },
+        {
+            $project: {
+                fromUserId: 1,
+                toUserId: 1,
+                message: 1,
+                photoURL: 1,
+                createdAt: 1,
+                fromToUser: [
+                    '$fromUserId',
+                    '$toUserId',
+                ]
+            }
+        },
+        {
+            $unwind: '$fromToUser'
+        },
+        {
+            $sort: {
+                'fromToUser': 1
+            }
+        },
+        {
+            $group: {
+                _id: '$_id',
+                fromToUser: {
+                    $push: '$fromToUser'
+                },
+                fromUserId: {
+                    $first: '$fromUserId'
+                },
+                toUserId: {
+                    $first: '$toUserId'
+                },
+                message: {
+                    $first: '$message'
+                },
+                photoURL: {
+                    $first: '$photoURL'
+                },
+                createdAt: {
+                    $first: '$createdAt'
+                }
+            }
+        },
+        {
+            $sort: {
+                createdAt: -1
+            }
+        },
+        {
+            $group: {
+                _id: '$fromToUser',
+                fromUserId: {
+                    $first: '$fromUserId'
+                },
+                toUserId: {
+                    $first: '$toUserId'
+                },
+                message: {
+                    $first: '$message'
+                },
+                photoURL: {
+                    $first: '$photoURL'
+                },
+                messageId: {
+                    $first: '$_id'
+                },
+                createdAt: {
+                    $first: '$createdAt'
+                }
+            }
+        },
+        {
+            $count: "count"
+        }
+    ])
+    return { count: Array.isArray(aggregateData) && aggregateData.length > 0 ? aggregateData[0].count : 0 }
+}
+
 async function getLatestChatMessages ({ users, offset, limit }: { users: [string, string], offset: number, limit: number }) {
     const aggregateData = await Message.aggregate([
         {
@@ -267,5 +360,6 @@ export default {
     createMessage,
     getLatestMessage,
     getLatestMessages,
+    getLatestMessagesCount,
     getLatestChatMessages,
 }
