@@ -18,8 +18,8 @@ const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             searchQuery: { type: new GraphQLNonNull(GraphQLString) },
             limit: { type: new GraphQLNonNull(GraphQLInt) },
         },
-        resolve (_, { searchQuery, limit }) {
-            return userRepository.findUsersBySearchQuery({ searchQuery, limit })
+        resolve (_, { searchQuery, limit }, { userId }) {
+            return userRepository.findUsersBySearchQuery({ searchQuery, limit, userId })
         }
     }
 }
