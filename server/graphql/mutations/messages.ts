@@ -5,6 +5,7 @@ import {
     GraphQLNonNull,
     GraphQLString,
 } from 'graphql'
+import { GraphQLUpload } from 'graphql-upload-ts'
 import FullMessage from '../models/FullMessage'
 import messagesRepository from '../../repositories/messagesRepository'
 import { Context } from '../types'
@@ -17,7 +18,7 @@ const CreateMessageInput = new GraphQLInputObjectType({
     fields: () => ({
         toUserId: { type: new GraphQLNonNull(GraphQLString) },
         message: { type: GraphQLString },
-        photoURL: { type: GraphQLString },
+        photo: { type: GraphQLUpload },
     })
 })
 
@@ -30,7 +31,7 @@ const messagesMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
                 fromUserId: userId,
                 toUserId: message.toUserId,
                 message: message.message,
-                photoURL: message.photoURL,
+                photo: message.photo,
             })
             pubsub.publish(MESSAGES_SUBSCRIPTIONS.MESSAGE_CREATED, createdMessage)
             return createdMessage

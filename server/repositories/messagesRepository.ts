@@ -1,14 +1,16 @@
 import Message from '../models/Message'
+import { FileUpload } from 'graphql-upload-ts'
 import User, { UserType } from '../models/User'
 import { Error, Document } from 'mongoose'
 import { getValidationError, getCustomValidationError } from '../utils'
+import fileRepository from './fileRepository'
 
 
 interface CreateMessageInput {
     fromUserId: string
     toUserId: string
     message?: string
-    photoURL?: string
+    photo?: Promise<FileUpload>
 }
 
 interface Message extends Document {
@@ -16,10 +18,15 @@ interface Message extends Document {
     toUserId: UserType
 }
 
-async function createMessage ({ fromUserId, toUserId, message, photoURL }: CreateMessageInput) {
+async function createMessage ({ fromUserId, toUserId, message, photo }: CreateMessageInput) {
     try {
         if (!await User.findById(toUserId)) {
             return Promise.reject(getCustomValidationError('to', `User with id ${toUserId} does not exist`))
+        }
+        let photoURL = null
+        if (photo) {
+            const { url } = await fileRepository.storeUpload(photo, '/storage/messages')
+            photoURL = url
         }
         const createdMessage = new Message({
             fromUserId,
