@@ -5,6 +5,7 @@ import { json } from 'body-parser'
 import { WebSocketServer } from 'ws'
 import { useServer } from 'graphql-ws/lib/use/ws'
 import { ApolloServer, GraphQLRequestContextDidResolveOperation } from '@apollo/server'
+import { graphQLUploadMiddleware } from '../middleware'
 import { expressMiddleware } from '@apollo/server/express4'
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer'
 import {
@@ -76,9 +77,11 @@ const setupServer = async () => {
         ]
     })
 
+    app.use('/api', cors({ origin: 'http://localhost:3000', credentials: true }), json(), graphQLUploadMiddleware)
+
     await server.start()
 
-    app.use('/api', cors({ origin: 'http://localhost:3000', credentials: true }), json(), expressMiddleware(server, {
+    app.use('/api', expressMiddleware(server, {
         context: async ({ req, res }) => {
             return {
                 setRefreshTokenCookie (refreshToken: string, immediate: boolean = false) {
