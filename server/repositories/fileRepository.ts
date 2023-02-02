@@ -1,5 +1,6 @@
 import { createWriteStream, unlink } from 'fs'
 import path from 'path'
+import fs from 'fs'
 import { FileUpload } from 'graphql-upload-ts'
 
 
@@ -32,6 +33,13 @@ async function storeUpload (upload: Promise<FileUpload>, url: string) {
     }
 }
 
+async function getEncodedFile (url: string) {
+    const filePath = path.join(__dirname, '..', url)
+    const fileData = fs.readFileSync(filePath)
+    return Buffer.from(fileData).toString('base64')
+}
+
 export default {
-    storeUpload
+    storeUpload,
+    getEncodedFile,
 }
