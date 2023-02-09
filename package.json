@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@apollo/server": "^4.1.1",
+    "@rajesh896/video-thumbnails-generator": "^2.3.9",
     "@types/apollo-upload-client": "^17.0.2",
     "@types/bcrypt": "^5.0.0",
     "@types/ws": "^8.5.3",
