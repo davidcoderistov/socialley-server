@@ -9,6 +9,7 @@ import { GraphQLUpload } from 'graphql-upload-ts'
 import { Context } from '../types'
 import Post from '../models/Post'
 import Comment from '../models/Comment'
+import PostLike from '../models/PostLike'
 import postsRepository from '../../repositories/postsRepository'
 
 
@@ -29,6 +30,13 @@ const CreateCommentInput = new GraphQLInputObjectType({
     })
 })
 
+const LikePostInput = new GraphQLInputObjectType({
+    name: 'LikePostInput',
+    fields: () => ({
+        postId: { type: new GraphQLNonNull(GraphQLString) },
+    })
+})
+
 const postsMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     createPost: {
         type: Post,
@@ -39,6 +47,11 @@ const postsMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         type: Comment,
         args: { comment: { type: CreateCommentInput }},
         resolve: (_, { comment }, { userId }) => postsRepository.createComment({...comment, userId})
+    },
+    likePost: {
+        type: PostLike,
+        args: { postLike: { type: LikePostInput }},
+        resolve: (_, { postLike }, { userId }) => postsRepository.likePost({...postLike, userId})
     }
 }
 
