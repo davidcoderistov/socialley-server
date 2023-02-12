@@ -1,6 +1,7 @@
 import Post from '../models/Post'
 import Comment from '../models/Comment'
 import PostLike from '../models/PostLike'
+import CommentLike from '../models/CommentLike'
 import User, { UserType } from '../models/User'
 import { FileUpload } from 'graphql-upload-ts'
 import { Error, Document } from 'mongoose'
@@ -114,8 +115,38 @@ async function likePost ({ postId, userId }: LikePostInput) {
     }
 }
 
+interface LikeCommentInput {
+    commentId: string
+    userId: string
+}
+
+async function likeComment ({ commentId, userId }: LikeCommentInput) {
+    try {
+        if (!await Comment.findById(commentId)) {
+            return Promise.reject(getCustomValidationError('commentId', `Comment with id ${commentId} does not exist`))
+        }
+
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const commentLike = new CommentLike({
+            commentId,
+            userId,
+        })
+        return await commentLike.save()
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     createPost,
     createComment,
     likePost,
+    likeComment,
 }
