@@ -4,6 +4,7 @@ import {
 } from 'graphql'
 import userQueries from './queries/user'
 import messagesQueries from './queries/messages'
+import postsQueries from './queries/posts'
 import filesQueries from './queries/files'
 import authMutations from './mutations/auth'
 import messagesMutations from './mutations/messages'
@@ -16,6 +17,7 @@ const Query = new GraphQLObjectType({
     fields: {
         ...userQueries,
         ...messagesQueries,
+        ...postsQueries,
         ...filesQueries,
     },
 })
