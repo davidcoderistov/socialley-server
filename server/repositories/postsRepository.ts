@@ -1,4 +1,5 @@
 import Post from '../models/Post'
+import Comment from '../models/Comment'
 import User, { UserType } from '../models/User'
 import { FileUpload } from 'graphql-upload-ts'
 import { Error, Document } from 'mongoose'
@@ -20,7 +21,7 @@ interface Post extends Document {
 async function createPost ({ title = null, photo, video = null, userId }: CreatePostInput) {
     try {
         if (!await User.findById(userId)) {
-            return Promise.reject(getCustomValidationError('to', `User with id ${userId} does not exist`))
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
         }
 
         const { url: photoURL } = await fileRepository.storeUpload(photo, '/storage/posts')
@@ -52,6 +53,38 @@ async function createPost ({ title = null, photo, video = null, userId }: Create
     }
 }
 
+interface CreateCommentInput {
+    text: string
+    postId: string
+    userId: string
+}
+
+async function createComment ({ text, postId, userId }: CreateCommentInput) {
+    try {
+        if (!await Post.findById(postId)) {
+            return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
+        }
+
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const comment = new Comment({
+            text,
+            postId,
+            userId,
+        })
+        return await comment.save()
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     createPost,
+    createComment,
 }
