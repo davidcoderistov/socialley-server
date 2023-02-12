@@ -144,9 +144,77 @@ async function likeComment ({ commentId, userId }: LikeCommentInput) {
     }
 }
 
+async function getCommentsForPost ({ postId, offset, limit }: { postId: string, offset: number, limit: number }) {
+    const aggregateData = await Comment.aggregate([
+        {
+            $match: { postId },
+        },
+        {
+            $addFields: { commentId: { $toString: '$_id' }}
+        },
+        {
+            $lookup: {
+                from: CommentLike.collection.name,
+                localField: 'commentId',
+                foreignField: 'commentId',
+                as: 'likes',
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                text: 1,
+                postId: 1,
+                userId: 1,
+                createdAt: 1,
+                likesCount: { $size: '$likes' },
+            }
+        },
+        {
+            $sort: {
+                createdAt: 1
+            }
+        },
+        {
+            $facet: {
+                metadata: [{
+                    $count: 'count'
+                }],
+                data: [{
+                    $skip: offset,
+                }, {
+                    $limit: limit,
+                }]
+            }
+        }
+    ])
+
+    const commentsWithLikes = await Comment.populate(aggregateData[0].data, 'userId') as unknown as Array<{
+        _id: string
+        text: string
+        postId: string
+        userId: UserType
+        createdAt: string
+        likesCount: number
+    }>
+
+    return {
+        total: aggregateData[0].metadata[0].count,
+        data: commentsWithLikes.map(comment => ({
+            _id: comment._id,
+            text: comment.text,
+            postId: comment.postId,
+            user: comment.userId,
+            createdAt: comment.createdAt,
+            likesCount: comment.likesCount,
+        })),
+    }
+}
+
 export default {
     createPost,
     createComment,
     likePost,
     likeComment,
+    getCommentsForPost,
 }
