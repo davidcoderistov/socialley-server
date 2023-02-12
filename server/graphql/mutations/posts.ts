@@ -10,6 +10,7 @@ import { Context } from '../types'
 import Post from '../models/Post'
 import Comment from '../models/Comment'
 import PostLike from '../models/PostLike'
+import CommentLike from '../models/CommentLike'
 import postsRepository from '../../repositories/postsRepository'
 
 
@@ -37,6 +38,13 @@ const LikePostInput = new GraphQLInputObjectType({
     })
 })
 
+const LikeCommentInput = new GraphQLInputObjectType({
+    name: 'LikeCommentInput',
+    fields: () => ({
+        commentId: { type: new GraphQLNonNull(GraphQLString) },
+    })
+})
+
 const postsMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     createPost: {
         type: Post,
@@ -52,6 +60,11 @@ const postsMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         type: PostLike,
         args: { postLike: { type: LikePostInput }},
         resolve: (_, { postLike }, { userId }) => postsRepository.likePost({...postLike, userId})
+    },
+    likeComment: {
+        type: CommentLike,
+        args: { commentLike: { type: LikeCommentInput }},
+        resolve: (_, { commentLike }, { userId }) => postsRepository.likeComment({...commentLike, userId})
     }
 }
 
