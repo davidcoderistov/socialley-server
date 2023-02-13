@@ -101,6 +101,10 @@ async function likePost ({ postId, userId }: LikePostInput) {
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
         }
 
+        if ((await PostLike.find({ postId, userId })).length > 0) {
+            return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} is already liked`))
+        }
+
         const postLike = new PostLike({
             postId,
             userId,
@@ -128,6 +132,10 @@ async function likeComment ({ commentId, userId }: LikeCommentInput) {
 
         if (!await User.findById(userId)) {
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        if ((await CommentLike.find({ commentId, userId })).length > 0) {
+            return Promise.reject(getCustomValidationError('commentId', `Comment with id ${commentId} is already liked`))
         }
 
         const commentLike = new CommentLike({
