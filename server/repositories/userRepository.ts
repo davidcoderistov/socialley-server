@@ -1,4 +1,5 @@
 import User, { UserType } from '../models/User'
+import Follow from '../models/Follow'
 import bcrypt from 'bcrypt'
 import { Error } from 'mongoose'
 import { MongoError } from 'mongodb'
@@ -155,10 +156,39 @@ async function findUsersBySearchQuery ({ searchQuery, limit, userId }: { searchQ
         .limit(limit)
 }
 
+async function followUser ({ followingUserId, followedUserId }: { followingUserId: string, followedUserId: string }) {
+    try {
+        if (!await User.findById(followingUserId)) {
+            return Promise.reject(getCustomValidationError('followingUserId', `User with id ${followingUserId} does not exist`))
+        }
+
+        if (!await User.findById(followingUserId)) {
+            return Promise.reject(getCustomValidationError('followedUserId', `User with id ${followedUserId} does not exist`))
+        }
+
+        if ((await Follow.find({ followingUserId, followedUserId })).length > 0) {
+            return Promise.reject(getCustomValidationError('followedUserId', `User ${followingUserId} already follows ${followedUserId}`))
+        }
+
+        const follow = new Follow({
+            followingUserId,
+            followedUserId,
+        })
+        return await follow.save()
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     signUp,
     login,
     refresh,
     logout,
     findUsersBySearchQuery,
+    followUser,
 }
