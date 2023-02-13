@@ -7,6 +7,7 @@ import messagesQueries from './queries/messages'
 import postsQueries from './queries/posts'
 import filesQueries from './queries/files'
 import authMutations from './mutations/auth'
+import usersMutations from './mutations/users'
 import messagesMutations from './mutations/messages'
 import postsMutations from './mutations/posts'
 import messagesSubscriptions from './subscriptions/messages'
@@ -26,6 +27,7 @@ const Mutation = new GraphQLObjectType({
     name: 'Mutation',
     fields: {
         ...authMutations,
+        ...usersMutations,
         ...messagesMutations,
         ...postsMutations,
     }
