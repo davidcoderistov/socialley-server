@@ -31,6 +31,28 @@ const CommentsForPostOutput = new GraphQLObjectType({
     })
 })
 
+const FollowedUserPost = new GraphQLObjectType({
+    name: 'FollowedUserPost',
+    fields: () => ({
+        _id: { type: new GraphQLNonNull(GraphQLString) },
+        title: { type: GraphQLString },
+        photoURL: { type: new GraphQLNonNull(GraphQLString) },
+        videoURL: { type: GraphQLString },
+        user: { type: new GraphQLNonNull(PublicUser) },
+        firstLikeUser: { type: PublicUser },
+        likesCount: { type: new GraphQLNonNull(GraphQLInt) },
+        commentsCount: { type: new GraphQLNonNull(GraphQLInt) },
+    })
+})
+
+const FollowedUsersPostsPaginated = new GraphQLObjectType({
+    name: 'FollowedUsersPostsPaginated',
+    fields: () => ({
+        data: { type: new GraphQLNonNull(new GraphQLList(FollowedUserPost)) },
+        total: { type: new GraphQLNonNull(GraphQLInt) },
+    })
+})
+
 const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     getCommentsForPost: {
         type: CommentsForPostOutput,
@@ -40,6 +62,15 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             limit: { type: new GraphQLNonNull(GraphQLInt) },
         },
         resolve: (_, args) => postsRepository.getCommentsForPost(args)
+    },
+    getFollowedUsersPostsPaginated: {
+        type: FollowedUsersPostsPaginated,
+        args: {
+            offset: { type: new GraphQLNonNull(GraphQLInt) },
+            limit: { type: new GraphQLNonNull(GraphQLInt) },
+        },
+        resolve: (_, { offset, limit }, { userId }) =>
+            postsRepository.getFollowedUsersPostsPaginated({ userId, offset, limit })
     }
 }
 
