@@ -2,6 +2,7 @@ import Post from '../models/Post'
 import Comment from '../models/Comment'
 import PostLike from '../models/PostLike'
 import CommentLike from '../models/CommentLike'
+import Follow from '../models/Follow'
 import User, { UserType } from '../models/User'
 import { FileUpload } from 'graphql-upload-ts'
 import { Error, Document } from 'mongoose'
@@ -219,10 +220,140 @@ async function getCommentsForPost ({ postId, offset, limit }: { postId: string, 
     }
 }
 
+async function getFollowedUsersPostsPaginated ({ userId, offset, limit }: { userId: string, offset: number, limit: number }) {
+    try {
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const userFollows = await Follow.find({ followingUserId: userId }).select('followedUserId')
+        const followedUsersIds = userFollows.map(follow => follow.followedUserId)
+
+        const aggregateData = await Post.aggregate([
+            {
+                $match: { userId: { $in: followedUsersIds }},
+            },
+            {
+                $addFields: { postId: { $toString: '$_id' }}
+            },
+            {
+                $lookup: {
+                    from: Comment.collection.name,
+                    localField: 'postId',
+                    foreignField: 'postId',
+                    as: 'comments'
+                }
+            },
+            {
+                $project: {
+                    postId: 1,
+                    title: 1,
+                    photoURL: 1,
+                    videoURL: 1,
+                    userId: 1,
+                    createdAt: 1,
+                    commentsCount: { $size: '$comments' }
+                }
+            },
+            {
+                $lookup: {
+                    from: PostLike.collection.name,
+                    localField: 'postId',
+                    foreignField: 'postId',
+                    as: 'postLikes'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$postLikes',
+                    preserveNullAndEmptyArrays: true,
+                }
+            },
+            {
+                $sort: { 'postLikes.createdAt': -1 }
+            },
+            {
+                $group: {
+                    _id: '$postId',
+                    postId: { $first: '$postId' },
+                    title: { $first: '$title' },
+                    photoURL: { $first: '$photoURL' },
+                    videoURL: { $first: '$videoURL' },
+                    userId: { $first: '$userId' },
+                    createdAt: { $first: '$createdAt' },
+                    commentsCount: { $first: '$commentsCount' },
+                    likesCount: {
+                        $sum: {
+                            $cond: [{ $ifNull: ['$postLikes', false] }, 1, 0]
+                        }
+                    },
+                    firstLikeUserId: { $first: '$postLikes.userId' }
+                }
+            },
+            {
+                $sort: { 'createdAt': -1 }
+            },
+            {
+                $facet: {
+                    metadata: [{
+                        $count: 'count'
+                    }],
+                    data: [
+                        {
+                            $skip: offset,
+                        },
+                        {
+                            $limit: limit,
+                        },
+                        {
+                            $addFields: {
+                                userObjectId: { $toObjectId: '$userId' },
+                                firstLikeUserObjectId: { $toObjectId: '$firstLikeUserId' },
+                            }
+                        },
+                        {
+                            $lookup: {
+                                from: User.collection.name,
+                                localField: 'userObjectId',
+                                foreignField: '_id',
+                                as: 'users'
+                            }
+                        },
+                        {
+                            $lookup: {
+                                from: User.collection.name,
+                                localField: 'firstLikeUserObjectId',
+                                foreignField: '_id',
+                                as: 'firstLikeUsers'
+                            }
+                        },
+                    ]
+                }
+            }
+        ])
+
+        return {
+            total: aggregateData[0].metadata[0].count,
+            data: aggregateData[0].data.map(post => ({
+                ...post,
+                user: post.users[0],
+                firstLikeUser: post.firstLikeUsers.length > 0 ? post.firstLikeUsers[0] : null
+            }))
+        }
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     createPost,
     createComment,
     likePost,
     likeComment,
     getCommentsForPost,
+    getFollowedUsersPostsPaginated,
 }
