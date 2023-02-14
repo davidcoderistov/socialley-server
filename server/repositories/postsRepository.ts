@@ -4,6 +4,7 @@ import PostLike from '../models/PostLike'
 import CommentLike from '../models/CommentLike'
 import Follow from '../models/Follow'
 import User, { UserType } from '../models/User'
+import { PublicUser } from '../graphql/types'
 import { FileUpload } from 'graphql-upload-ts'
 import { Error, Document } from 'mongoose'
 import { getValidationError, getCustomValidationError } from '../utils'
@@ -349,6 +350,81 @@ async function getFollowedUsersPostsPaginated ({ userId, offset, limit }: { user
     }
 }
 
+interface GetUsersWhoLikedPostOptions {
+    postId: string
+    userId: string
+    offset: number
+    limit: number
+}
+
+interface LikingUser extends PublicUser {
+    following: boolean
+}
+
+async function getUsersWhoLikedPost ({ postId, userId, offset, limit }: GetUsersWhoLikedPostOptions): Promise<{ total: number, data: Array<LikingUser> }> {
+    try {
+        if (!await Post.findById(postId)) {
+            return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
+        }
+
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const paginatedUsersData = await PostLike.aggregate([
+            {
+                $match: { postId }
+            },
+            {
+                $sort: { createdAt: -1 }
+            },
+            {
+                $facet: {
+                    metadata: [{
+                        $count: 'count'
+                    }],
+                    data: [
+                        {
+                            $skip: offset,
+                        },
+                        {
+                            $limit: limit,
+                        },
+                        {
+                            $project: {
+                                userId: 1
+                            }
+                        }
+                    ]
+                }
+            }
+        ])
+
+        const users = await PostLike.populate(paginatedUsersData[0].data, 'userId') as unknown as Array<{ userId: Document }>
+
+        const userFollows = await Follow.find({ followingUserId: userId }).select('followedUserId')
+        const followedUsersIds = userFollows.map(follow => follow.followedUserId)
+        const followedUsersIdsMap = followedUsersIds.reduce((usersMap, userId) => ({
+            ...usersMap,
+            [userId]: true
+        }), {})
+
+        return {
+            total: paginatedUsersData[0].metadata[0].count,
+            data: users.map(user => ({
+                ...user.userId.toObject(),
+                following: followedUsersIdsMap.hasOwnProperty(user.userId._id.toString())
+            }))
+        }
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     createPost,
     createComment,
@@ -356,4 +432,5 @@ export default {
     likeComment,
     getCommentsForPost,
     getFollowedUsersPostsPaginated,
+    getUsersWhoLikedPost,
 }
