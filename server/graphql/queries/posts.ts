@@ -42,6 +42,7 @@ const FollowedUserPost = new GraphQLObjectType({
         firstLikeUser: { type: PublicUser },
         likesCount: { type: new GraphQLNonNull(GraphQLInt) },
         commentsCount: { type: new GraphQLNonNull(GraphQLInt) },
+        createdAt: { type: new GraphQLNonNull(DateScalar) },
     })
 })
 
