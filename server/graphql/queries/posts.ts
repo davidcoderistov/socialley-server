@@ -3,7 +3,11 @@ import {
     GraphQLNonNull,
     GraphQLString,
     GraphQLInt,
-    GraphQLList, ThunkObjMap, GraphQLFieldConfig,
+    GraphQLBoolean,
+    GraphQLList,
+    ThunkObjMap,
+    GraphQLFieldConfig,
+    GraphQLID,
 } from 'graphql'
 import { DateScalar } from '../scalars'
 import PublicUser from '../models/PublicUser'
@@ -54,6 +58,27 @@ const FollowedUsersPostsPaginated = new GraphQLObjectType({
     })
 })
 
+const LikingUser = new GraphQLObjectType({
+    name: 'LikingUser',
+    fields: () => ({
+        _id: { type: new GraphQLNonNull(GraphQLID) },
+        username: { type: new GraphQLNonNull(GraphQLString) },
+        firstName: { type: new GraphQLNonNull(GraphQLString) },
+        lastName: { type: new GraphQLNonNull(GraphQLString) },
+        email: { type: new GraphQLNonNull(GraphQLString) },
+        avatarURL: { type: GraphQLString },
+        following: { type: new GraphQLNonNull(GraphQLBoolean) }
+    })
+})
+
+const UsersWhoLikedPostOutput = new GraphQLObjectType({
+    name: 'UsersWhoLikedPostOutput',
+    fields: () => ({
+        data: { type: new GraphQLNonNull(new GraphQLList(LikingUser)) },
+        total: { type: new GraphQLNonNull(GraphQLInt) },
+    })
+})
+
 const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     getCommentsForPost: {
         type: CommentsForPostOutput,
@@ -72,6 +97,15 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         },
         resolve: (_, { offset, limit }, { userId }) =>
             postsRepository.getFollowedUsersPostsPaginated({ userId, offset, limit })
+    },
+    getUsersWhoLikedPost: {
+        type: UsersWhoLikedPostOutput,
+        args: {
+            postId: { type: new GraphQLNonNull(GraphQLString) },
+            offset: { type: new GraphQLNonNull(GraphQLInt) },
+            limit: { type: new GraphQLNonNull(GraphQLInt) },
+        },
+        resolve: (_, args, { userId }) => postsRepository.getUsersWhoLikedPost({ ...args,userId })
     }
 }
 
