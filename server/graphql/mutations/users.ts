@@ -15,6 +15,12 @@ const usersMutations:  ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         args: { followedUserId: { type: new GraphQLNonNull(GraphQLString) }},
         resolve: (_, { followedUserId }, { userId: followingUserId }) =>
             userRepository.followUser({ followingUserId, followedUserId })
+    },
+    unfollowUser: {
+        type: Follow,
+        args: { followedUserId: { type: new GraphQLNonNull(GraphQLString) }},
+        resolve: (_, { followedUserId }, { userId: followingUserId }) =>
+            userRepository.unfollowUser({ followingUserId, followedUserId })
     }
 }
 
