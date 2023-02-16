@@ -44,6 +44,7 @@ const FollowedUserPost = new GraphQLObjectType({
         videoURL: { type: GraphQLString },
         user: { type: new GraphQLNonNull(PublicUser) },
         firstLikeUser: { type: PublicUser },
+        liked: { type: new GraphQLNonNull(GraphQLBoolean) },
         likesCount: { type: new GraphQLNonNull(GraphQLInt) },
         commentsCount: { type: new GraphQLNonNull(GraphQLInt) },
         createdAt: { type: new GraphQLNonNull(DateScalar) },

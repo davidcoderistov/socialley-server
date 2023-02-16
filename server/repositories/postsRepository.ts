@@ -265,6 +265,13 @@ async function getFollowedUsersPostsPaginated ({ userId, offset, limit }: { user
                 }
             },
             {
+                $addFields: {
+                    liked: {
+                        $in: [userId, '$postLikes.userId']
+                    }
+                }
+            },
+            {
                 $unwind: {
                     path: '$postLikes',
                     preserveNullAndEmptyArrays: true,
@@ -283,6 +290,7 @@ async function getFollowedUsersPostsPaginated ({ userId, offset, limit }: { user
                     userId: { $first: '$userId' },
                     createdAt: { $first: '$createdAt' },
                     commentsCount: { $first: '$commentsCount' },
+                    liked: { $first: '$liked' },
                     likesCount: {
                         $sum: {
                             $cond: [{ $ifNull: ['$postLikes', false] }, 1, 0]
