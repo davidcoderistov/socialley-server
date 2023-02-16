@@ -1,6 +1,7 @@
 import Post from '../models/Post'
 import Comment from '../models/Comment'
 import PostLike from '../models/PostLike'
+import UserFavorite from '../models/UserFavorite'
 import CommentLike from '../models/CommentLike'
 import Follow from '../models/Follow'
 import User, { UserType } from '../models/User'
@@ -433,6 +434,39 @@ async function getUsersWhoLikedPost ({ postId, userId, offset, limit }: GetUsers
     }
 }
 
+interface MarkUserPostAsFavoriteOptions {
+    userId: string
+    postId: string
+}
+
+async function markUserPostAsFavorite ({ userId, postId }: MarkUserPostAsFavoriteOptions) {
+    try {
+        if (!await Post.findById(postId)) {
+            return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
+        }
+
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        if ((await UserFavorite.find({ postId, userId })).length > 0) {
+            return Promise.reject(getCustomValidationError('postId', `User ${userId} already marked ${postId} as favorite`))
+        }
+
+        const userFavorite = new UserFavorite({
+            postId,
+            userId,
+        })
+        return await userFavorite.save()
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     createPost,
     createComment,
@@ -441,4 +475,5 @@ export default {
     getCommentsForPost,
     getFollowedUsersPostsPaginated,
     getUsersWhoLikedPost,
+    markUserPostAsFavorite,
 }
