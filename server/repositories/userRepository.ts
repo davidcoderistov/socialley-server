@@ -162,7 +162,7 @@ async function followUser ({ followingUserId, followedUserId }: { followingUserI
             return Promise.reject(getCustomValidationError('followingUserId', `User with id ${followingUserId} does not exist`))
         }
 
-        if (!await User.findById(followingUserId)) {
+        if (!await User.findById(followedUserId)) {
             return Promise.reject(getCustomValidationError('followedUserId', `User with id ${followedUserId} does not exist`))
         }
 
@@ -184,6 +184,26 @@ async function followUser ({ followingUserId, followedUserId }: { followingUserI
     }
 }
 
+async function unfollowUser ({ followingUserId, followedUserId }: { followingUserId: string, followedUserId: string }) {
+    try {
+        if (!await User.findById(followingUserId)) {
+            return Promise.reject(getCustomValidationError('followingUserId', `User with id ${followingUserId} does not exist`))
+        }
+
+        if (!await User.findById(followedUserId)) {
+            return Promise.reject(getCustomValidationError('followedUserId', `User with id ${followedUserId} does not exist`))
+        }
+
+        return await Follow.findOneAndDelete({ followingUserId, followedUserId })
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     signUp,
     login,
@@ -191,4 +211,5 @@ export default {
     logout,
     findUsersBySearchQuery,
     followUser,
+    unfollowUser,
 }
