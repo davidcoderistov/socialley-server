@@ -10,6 +10,7 @@ import { Context } from '../types'
 import Post from '../models/Post'
 import Comment from '../models/Comment'
 import PostLike from '../models/PostLike'
+import UserFavorite from '../models/UserFavorite'
 import CommentLike from '../models/CommentLike'
 import postsRepository from '../../repositories/postsRepository'
 
@@ -65,7 +66,12 @@ const postsMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         type: CommentLike,
         args: { commentLike: { type: LikeCommentInput }},
         resolve: (_, { commentLike }, { userId }) => postsRepository.likeComment({...commentLike, userId})
-    }
+    },
+    markUserPostAsFavorite: {
+        type: UserFavorite,
+        args: { postId: { type: new GraphQLNonNull(GraphQLString) }},
+        resolve: (_, { postId }, { userId }) => postsRepository.markUserPostAsFavorite({ postId, userId })
+    },
 }
 
 export default postsMutations
