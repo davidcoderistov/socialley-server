@@ -59,8 +59,8 @@ const postsMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     },
     likePost: {
         type: PostLike,
-        args: { postLike: { type: LikePostInput }},
-        resolve: (_, { postLike }, { userId }) => postsRepository.likePost({...postLike, userId})
+        args: { postId: { type: new GraphQLNonNull(GraphQLString) }},
+        resolve: (_, { postId }, { userId }) => postsRepository.likePost({ postId, userId })
     },
     unlikePost: {
         type: PostLike,
