@@ -122,6 +122,37 @@ async function likePost ({ postId, userId }: LikePostInput) {
     }
 }
 
+interface UnlikePostOptions {
+    postId: string
+    userId: string
+}
+
+async function unlikePost ({ postId, userId }: UnlikePostOptions) {
+    try {
+        if (!await Post.findById(postId)) {
+            return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
+        }
+
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const postLike = await PostLike.findOneAndDelete({ postId, userId })
+
+        if (!postLike) {
+            return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} is not liked`))
+        }
+
+        return postLike
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 interface LikeCommentInput {
     commentId: string
     userId: string
@@ -518,6 +549,7 @@ export default {
     createPost,
     createComment,
     likePost,
+    unlikePost,
     likeComment,
     getCommentsForPost,
     getFollowedUsersPostsPaginated,
