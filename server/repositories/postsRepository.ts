@@ -467,6 +467,37 @@ async function markUserPostAsFavorite ({ userId, postId }: MarkUserPostAsFavorit
     }
 }
 
+interface UnmarkUserPostAsFavoriteOptions {
+    userId: string
+    postId: string
+}
+
+async function unmarkUserPostAsFavorite ({ userId, postId }: UnmarkUserPostAsFavoriteOptions) {
+    try {
+        if (!await Post.findById(postId)) {
+            return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
+        }
+
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const userFavorite = await UserFavorite.findOneAndDelete({ userId, postId })
+
+        if (!userFavorite) {
+            return Promise.reject(getCustomValidationError('postId', `UserFavorite with postId ${postId} does not exist`))
+        }
+
+        return userFavorite
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     createPost,
     createComment,
@@ -476,4 +507,5 @@ export default {
     getFollowedUsersPostsPaginated,
     getUsersWhoLikedPost,
     markUserPostAsFavorite,
+    unmarkUserPostAsFavorite,
 }
