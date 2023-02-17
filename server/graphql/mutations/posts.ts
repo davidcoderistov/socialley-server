@@ -72,6 +72,11 @@ const postsMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         args: { postId: { type: new GraphQLNonNull(GraphQLString) }},
         resolve: (_, { postId }, { userId }) => postsRepository.markUserPostAsFavorite({ postId, userId })
     },
+    unmarkUserPostAsFavorite: {
+        type: UserFavorite,
+        args: { postId: { type: new GraphQLNonNull(GraphQLString) }},
+        resolve: (_, { postId }, { userId }) => postsRepository.unmarkUserPostAsFavorite({ postId, userId })
+    }
 }
 
 export default postsMutations
