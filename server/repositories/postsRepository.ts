@@ -273,6 +273,21 @@ async function getFollowedUsersPostsPaginated ({ userId, offset, limit }: { user
                 }
             },
             {
+                $lookup: {
+                    from: UserFavorite.collection.name,
+                    localField: 'postId',
+                    foreignField: 'postId',
+                    as: 'userFavorites'
+                }
+            },
+            {
+                $addFields: {
+                    favorite: {
+                        $in: [userId, '$userFavorites.userId']
+                    }
+                }
+            },
+            {
                 $unwind: {
                     path: '$postLikes',
                     preserveNullAndEmptyArrays: true,
@@ -292,6 +307,7 @@ async function getFollowedUsersPostsPaginated ({ userId, offset, limit }: { user
                     createdAt: { $first: '$createdAt' },
                     commentsCount: { $first: '$commentsCount' },
                     liked: { $first: '$liked' },
+                    favorite: { $first: '$favorite' },
                     likesCount: {
                         $sum: {
                             $cond: [{ $ifNull: ['$postLikes', false] }, 1, 0]
