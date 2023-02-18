@@ -545,6 +545,26 @@ async function unmarkUserPostAsFavorite ({ userId, postId }: UnmarkUserPostAsFav
     }
 }
 
+async function getFirstLikingUserForPost ({ postId }: { postId : string }) {
+    try {
+        if (!await Post.findById(postId)) {
+            return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
+        }
+
+        const postLikes = await PostLike.find({ postId }).sort({ createdAt: -1 })
+        if (postLikes.length > 0) {
+            return await User.findById(postLikes[0].userId)
+        }
+        return null
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     createPost,
     createComment,
@@ -556,4 +576,5 @@ export default {
     getUsersWhoLikedPost,
     markUserPostAsFavorite,
     unmarkUserPostAsFavorite,
+    getFirstLikingUserForPost,
 }
