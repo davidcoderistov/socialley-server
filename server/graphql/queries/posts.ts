@@ -108,6 +108,11 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             limit: { type: new GraphQLNonNull(GraphQLInt) },
         },
         resolve: (_, args, { userId }) => postsRepository.getUsersWhoLikedPost({ ...args,userId })
+    },
+    getFirstLikingUserForPost: {
+        type: PublicUser,
+        args: { postId: { type: new GraphQLNonNull(GraphQLString) }},
+        resolve: (_, { postId }) => postsRepository.getFirstLikingUserForPost({ postId })
     }
 }
 
