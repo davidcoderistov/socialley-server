@@ -22,6 +22,7 @@ const CommentWithLike = new GraphQLObjectType({
         text: { type: new GraphQLNonNull(GraphQLString) },
         postId: { type: new GraphQLNonNull(GraphQLString) },
         user: { type: new GraphQLNonNull(PublicUser) },
+        liked: { type: new GraphQLNonNull(GraphQLBoolean) },
         likesCount: { type: new GraphQLNonNull(GraphQLInt) },
         createdAt: { type: new GraphQLNonNull(DateScalar) },
     })
@@ -94,7 +95,7 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             offset: { type: new GraphQLNonNull(GraphQLInt) },
             limit: { type: new GraphQLNonNull(GraphQLInt) },
         },
-        resolve: (_, args) => postsRepository.getCommentsForPost(args)
+        resolve: (_, args, { userId }) => postsRepository.getCommentsForPost({ ...args, userId })
     },
     getFollowedUsersPostsPaginated: {
         type: FollowedUsersPostsPaginated,
