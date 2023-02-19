@@ -12,7 +12,7 @@ import { getValidationError, getCustomValidationError } from '../utils'
 import fileRepository from './fileRepository'
 
 
-interface CreatePostInput {
+interface CreatePostOptions {
     title?: string | null
     photo: Promise<FileUpload>
     video?: Promise<FileUpload> | null
@@ -23,7 +23,7 @@ interface Post extends Document {
     userId: UserType
 }
 
-async function createPost ({ title = null, photo, video = null, userId }: CreatePostInput) {
+async function createPost ({ title = null, photo, video = null, userId }: CreatePostOptions) {
     try {
         if (!await User.findById(userId)) {
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
@@ -58,13 +58,13 @@ async function createPost ({ title = null, photo, video = null, userId }: Create
     }
 }
 
-interface CreateCommentInput {
+interface CreateCommentOptions {
     text: string
     postId: string
     userId: string
 }
 
-async function createComment ({ text, postId, userId }: CreateCommentInput) {
+async function createComment ({ text, postId, userId }: CreateCommentOptions) {
     try {
         if (!await Post.findById(postId)) {
             return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
@@ -89,12 +89,12 @@ async function createComment ({ text, postId, userId }: CreateCommentInput) {
     }
 }
 
-interface LikePostInput {
+interface LikePostOptions {
     postId: string
     userId: string
 }
 
-async function likePost ({ postId, userId }: LikePostInput) {
+async function likePost ({ postId, userId }: LikePostOptions) {
     try {
         if (!await Post.findById(postId)) {
             return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
@@ -153,12 +153,12 @@ async function unlikePost ({ postId, userId }: UnlikePostOptions) {
     }
 }
 
-interface LikeCommentInput {
+interface LikeCommentOptions {
     commentId: string
     userId: string
 }
 
-async function likeComment ({ commentId, userId }: LikeCommentInput) {
+async function likeComment ({ commentId, userId }: LikeCommentOptions) {
     try {
         if (!await Comment.findById(commentId)) {
             return Promise.reject(getCustomValidationError('commentId', `Comment with id ${commentId} does not exist`))
