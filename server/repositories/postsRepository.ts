@@ -186,6 +186,37 @@ async function likeComment ({ commentId, userId }: LikeCommentOptions) {
     }
 }
 
+interface UnlikeCommentOptions {
+    commentId: string
+    userId: string
+}
+
+async function unlikeComment ({ commentId, userId }: UnlikeCommentOptions) {
+    try {
+        if (!await Comment.findById(commentId)) {
+            return Promise.reject(getCustomValidationError('commentId', `Comment with id ${commentId} does not exist`))
+        }
+
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const commentLike = await CommentLike.findOneAndDelete({ commentId, userId })
+
+        if (!commentLike) {
+            return Promise.reject(getCustomValidationError('commentId', `Comment with id ${commentId} is not liked`))
+        }
+
+        return commentLike
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 async function getCommentsForPost ({ postId, userId, offset, limit }: { postId: string, userId: string, offset: number, limit: number }) {
     const aggregateData = await Comment.aggregate([
         {
@@ -581,6 +612,7 @@ export default {
     likePost,
     unlikePost,
     likeComment,
+    unlikeComment,
     getCommentsForPost,
     getFollowedUsersPostsPaginated,
     getUsersWhoLikedPost,
