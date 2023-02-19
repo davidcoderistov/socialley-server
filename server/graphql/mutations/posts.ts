@@ -32,20 +32,6 @@ const CreateCommentInput = new GraphQLInputObjectType({
     })
 })
 
-const LikePostInput = new GraphQLInputObjectType({
-    name: 'LikePostInput',
-    fields: () => ({
-        postId: { type: new GraphQLNonNull(GraphQLString) },
-    })
-})
-
-const LikeCommentInput = new GraphQLInputObjectType({
-    name: 'LikeCommentInput',
-    fields: () => ({
-        commentId: { type: new GraphQLNonNull(GraphQLString) },
-    })
-})
-
 const postsMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     createPost: {
         type: Post,
@@ -69,8 +55,13 @@ const postsMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     },
     likeComment: {
         type: CommentLike,
-        args: { commentLike: { type: LikeCommentInput }},
-        resolve: (_, { commentLike }, { userId }) => postsRepository.likeComment({...commentLike, userId})
+        args: { commentId: { type: new GraphQLNonNull(GraphQLString) }},
+        resolve: (_, { commentId }, { userId }) => postsRepository.likeComment({ commentId, userId })
+    },
+    unlikeComment: {
+        type: CommentLike,
+        args: { commentId: { type: new GraphQLNonNull(GraphQLString) }},
+        resolve: (_, { commentId }, { userId }) => postsRepository.unlikeComment({ commentId, userId })
     },
     markUserPostAsFavorite: {
         type: UserFavorite,
