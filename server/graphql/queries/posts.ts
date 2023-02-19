@@ -35,6 +35,11 @@ const CommentsForPostOutput = new GraphQLObjectType({
     })
 })
 
+const FollowedUser = new GraphQLObjectType({
+    name: 'FollowedUser',
+    fields: () => ({...PublicUser.toConfig().fields})
+})
+
 const FollowedUserPost = new GraphQLObjectType({
     name: 'FollowedUserPost',
     fields: () => ({
@@ -42,7 +47,7 @@ const FollowedUserPost = new GraphQLObjectType({
         title: { type: GraphQLString },
         photoURL: { type: new GraphQLNonNull(GraphQLString) },
         videoURL: { type: GraphQLString },
-        user: { type: new GraphQLNonNull(PublicUser) },
+        user: { type: new GraphQLNonNull(FollowedUser) },
         firstLikeUser: { type: PublicUser },
         liked: { type: new GraphQLNonNull(GraphQLBoolean) },
         favorite: { type: new GraphQLNonNull(GraphQLBoolean) },
