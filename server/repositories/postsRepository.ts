@@ -186,7 +186,7 @@ async function likeComment ({ commentId, userId }: LikeCommentInput) {
     }
 }
 
-async function getCommentsForPost ({ postId, offset, limit }: { postId: string, offset: number, limit: number }) {
+async function getCommentsForPost ({ postId, userId, offset, limit }: { postId: string, userId: string, offset: number, limit: number }) {
     const aggregateData = await Comment.aggregate([
         {
             $match: { postId },
@@ -203,11 +203,19 @@ async function getCommentsForPost ({ postId, offset, limit }: { postId: string, 
             }
         },
         {
+            $addFields: {
+                liked: {
+                    $in: [userId, '$likes.userId']
+                }
+            }
+        },
+        {
             $project: {
                 _id: 1,
                 text: 1,
                 postId: 1,
                 userId: 1,
+                liked: 1,
                 createdAt: 1,
                 likesCount: { $size: '$likes' },
             }
@@ -236,6 +244,7 @@ async function getCommentsForPost ({ postId, offset, limit }: { postId: string, 
         text: string
         postId: string
         userId: UserType
+        liked: boolean
         createdAt: string
         likesCount: number
     }>
@@ -247,6 +256,7 @@ async function getCommentsForPost ({ postId, offset, limit }: { postId: string, 
             text: comment.text,
             postId: comment.postId,
             user: comment.userId,
+            liked: comment.liked,
             createdAt: comment.createdAt,
             likesCount: comment.likesCount,
         })),
