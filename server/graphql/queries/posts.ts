@@ -87,6 +87,14 @@ const UsersWhoLikedPostOutput = new GraphQLObjectType({
     })
 })
 
+const UsersWhoLikedCommentOutput = new GraphQLObjectType({
+    name: 'UsersWhoLikedCommentOutput',
+    fields: () => ({
+        data: { type: new GraphQLNonNull(new GraphQLList(LikingUser)) },
+        total: { type: new GraphQLNonNull(GraphQLInt) },
+    })
+})
+
 const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     getCommentsForPost: {
         type: CommentsForPostOutput,
@@ -114,6 +122,15 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             limit: { type: new GraphQLNonNull(GraphQLInt) },
         },
         resolve: (_, args, { userId }) => postsRepository.getUsersWhoLikedPost({ ...args,userId })
+    },
+    getUsersWhoLikedComment: {
+        type: UsersWhoLikedCommentOutput,
+        args: {
+            commentId: { type: new GraphQLNonNull(GraphQLString) },
+            offset: { type: new GraphQLNonNull(GraphQLInt) },
+            limit: { type: new GraphQLNonNull(GraphQLInt) },
+        },
+        resolve: (_, args, { userId }) => postsRepository.getUsersWhoLikedComment({ ...args,userId })
     },
     getFirstLikingUserForPost: {
         type: PublicUser,
