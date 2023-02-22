@@ -1,5 +1,7 @@
 import User, { UserType } from '../models/User'
 import Follow from '../models/Follow'
+import PostLike from '../models/PostLike'
+import Comment from '../models/Comment'
 import bcrypt from 'bcrypt'
 import { Error } from 'mongoose'
 import { MongoError } from 'mongodb'
@@ -204,6 +206,204 @@ async function unfollowUser ({ followingUserId, followedUserId }: { followingUse
     }
 }
 
+async function getSuggestedUsers ({ userId }: { userId: string }) {
+    try {
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const userFollows = await Follow.find({ followingUserId: userId }).select('followedUserId')
+        const followedUsersIds = userFollows.map(follow => follow.followedUserId)
+
+        // Find the users that are followed by the people the user follows and count them by how many of my followers follow them
+        const usersWithFollowedCount = await Follow.aggregate([
+            {
+                $match: {
+                    followingUserId: { $in: followedUsersIds },
+                    followedUserId: {
+                        $ne: userId,
+                        $nin: followedUsersIds
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: '$followedUserId',
+                    count: { $count: {} }
+                },
+            }
+        ])
+
+        // Post ids that my followers and the user liked
+        const userPostLikesIds = await PostLike.find({
+            $or: [
+                { userId: { $in: followedUsersIds }},
+                { userId }
+            ]
+        }).distinct('postId')
+
+        // Find all the people that liked the posts that the user and his followers liked and group them by number of liked posts
+        const usersWithPostLikesCount = await PostLike.aggregate([
+            {
+                $match: {
+                    postId: { $in: userPostLikesIds },
+                    userId: {
+                        $ne: userId,
+                        $nin: followedUsersIds
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: '$userId',
+                    count: { $count: {} }
+                },
+            }
+        ])
+
+        // Find all the people that commented on the posts that the user and his followers liked and group them by number of comments
+        // All comments on a given post are given a count of 1
+        const usersWithCommentsCount = await Comment.aggregate([
+            {
+                $match: {
+                    postId: { $in: userPostLikesIds },
+                    userId: {
+                        $ne: userId,
+                        $nin: followedUsersIds
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        userId: '$userId',
+                        postId: '$postId',
+                    },
+                }
+            },
+            {
+                $group: {
+                    _id: '$_id.userId',
+                    count: { $count: {} }
+                }
+            }
+        ])
+
+        const suggestedUsersWithCount = [
+            ...usersWithFollowedCount,
+            ...usersWithPostLikesCount,
+            ...usersWithCommentsCount
+        ].reduce((users, user) => ({
+            ...users,
+            [user._id]: (users[user._id] ?? 0) + user.count
+        }), {})
+
+        const suggestedUsersIds = Object.keys(suggestedUsersWithCount)
+
+        const suggestedUsers = await User.aggregate([
+            {
+                $addFields: {
+                    _userId: { $toString: '$_id' }
+                }
+            },
+            {
+                $match: {
+                    _userId: { $in: suggestedUsersIds }
+                }
+            },
+            {
+                $lookup: {
+                    from: Follow.collection.name,
+                    localField: '_userId',
+                    foreignField: 'followedUserId',
+                    as: 'follows'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$follows',
+                    preserveNullAndEmptyArrays: true,
+                }
+            },
+            {
+                $sort: {
+                    'follows.createdAt': -1
+                }
+            },
+            {
+                $addFields: {
+                    isFollowed: {
+                        $in: ['$follows.followingUserId', followedUsersIds]
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: '$_id',
+                    firstName: { $first: '$firstName' },
+                    lastName: { $first: '$lastName' },
+                    avatarURL: { $first: '$avatarURL' },
+                    username: { $first: '$username' },
+                    latestFollowerId: {
+                        $first: {
+                            $cond: {
+                                if: { $in: ['$follows.followingUserId', followedUsersIds] },
+                                then: '$follows.followingUserId',
+                                else: null
+                            }
+                        }
+                    },
+                    followedCount: {
+                        $sum: {
+                            $cond: {
+                                if: { $eq: ['$isFollowed', true] },
+                                then: 1,
+                                else: 0
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $limit: 10
+            },
+            {
+                $addFields: {
+                    latestFollowerObjectId: {
+                        $cond: {
+                            if: { $ne: [ '$latestFollowerId', null ] },
+                            then: { $toObjectId: '$latestFollowerId' },
+                            else: null
+                        }
+                    }
+                }
+            },
+            {
+                $lookup: {
+                    from: User.collection.name,
+                    localField: 'latestFollowerObjectId',
+                    foreignField: '_id',
+                    as: 'followers'
+                }
+            },
+        ])
+
+        return suggestedUsers
+            .sort((a, b) => suggestedUsersWithCount[b._id] - suggestedUsersWithCount[a._id])
+            .map(user => ({
+                ...user,
+                latestFollower: Array.isArray(user.followers) && user.followers.length > 0 ? user.followers[0] : null,
+            }))
+
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     signUp,
     login,
@@ -212,4 +412,5 @@ export default {
     findUsersBySearchQuery,
     followUser,
     unfollowUser,
+    getSuggestedUsers,
 }
