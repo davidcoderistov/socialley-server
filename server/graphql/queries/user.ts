@@ -9,6 +9,7 @@ import {
     GraphQLObjectType,
     GraphQLID,
 } from 'graphql'
+import User from '../models/user/User'
 import { Context } from '../types'
 import userRepository from '../../repositories/userRepository'
 
@@ -27,7 +28,7 @@ const SuggestedUser = new GraphQLObjectType({
 })
 const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     getUsersBySearchQuery: {
-        type: new GraphQLList(PublicUser),
+        type: new GraphQLList(User),
         args: {
             searchQuery: { type: new GraphQLNonNull(GraphQLString) },
             limit: { type: new GraphQLNonNull(GraphQLInt) },
