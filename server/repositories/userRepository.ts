@@ -1,9 +1,9 @@
 import User, { UserType } from '../models/User'
-import Follow from '../models/Follow'
+import Follow, { FollowType } from '../models/Follow'
 import PostLike from '../models/PostLike'
 import Comment from '../models/Comment'
 import bcrypt from 'bcrypt'
-import { Error } from 'mongoose'
+import mongoose, { Error } from 'mongoose'
 import { MongoError } from 'mongodb'
 import {
     generateAccessToken,
@@ -16,9 +16,7 @@ import {
 } from '../utils'
 
 
-type UserTypeWithAccessToken = UserType & { accessToken: string }
-
-interface SignUpInput {
+interface SignUpOptions {
     username: string
     firstName: string
     lastName: string
@@ -26,7 +24,9 @@ interface SignUpInput {
     password: string
 }
 
-async function signUp (signUpInput: SignUpInput): Promise<UserType> {
+type SignUpReturnValue = Omit<UserType, 'avatarURL' | 'accessToken' | 'refreshToken'>
+
+async function signUp (signUpInput: SignUpOptions): Promise<SignUpReturnValue> {
     try {
         if (signUpInput.password.length < 8) {
             return Promise.reject(getCustomValidationError('password', 'Password must contain at least 8 characters'))
@@ -52,12 +52,17 @@ async function signUp (signUpInput: SignUpInput): Promise<UserType> {
     }
 }
 
-interface LoginInput {
+interface LoginOptions {
     username: string
     password: string
 }
 
-async function login ({ username, password }: LoginInput): Promise<UserTypeWithAccessToken> {
+interface LoginReturnValue extends Omit<UserType, 'accessToken' | 'refreshToken'> {
+    accessToken: string
+    refreshToken: string
+}
+
+async function login ({ username, password }: LoginOptions): Promise<LoginReturnValue> {
     try {
         const user = await User.findOne({ username })
         if (!user) {
@@ -83,11 +88,16 @@ async function login ({ username, password }: LoginInput): Promise<UserTypeWithA
     }
 }
 
-interface RefreshInput {
+interface RefreshOptions {
     refreshToken: string | undefined
 }
 
-async function refresh ({ refreshToken }: RefreshInput): Promise<UserTypeWithAccessToken> {
+interface RefreshReturnValue extends Omit<UserType, 'accessToken' | 'refreshToken'> {
+    accessToken: string
+    refreshToken: string
+}
+
+async function refresh ({ refreshToken }: RefreshOptions): Promise<RefreshReturnValue> {
     try {
         if (!refreshToken) {
             return Promise.reject(getInvalidSessionError())
@@ -116,11 +126,13 @@ async function refresh ({ refreshToken }: RefreshInput): Promise<UserTypeWithAcc
     }
 }
 
-interface LogoutInput {
+interface LogoutOptions {
     refreshToken: string | undefined
 }
 
-async function logout ({ refreshToken }: LogoutInput): Promise<UserType> {
+type LogoutReturnValue = Omit<UserType, 'accessToken' | 'refreshToken'>
+
+async function logout ({ refreshToken }: LogoutOptions): Promise<LogoutReturnValue> {
     try {
         if (!refreshToken) {
             return Promise.reject(getInvalidSessionError())
@@ -144,7 +156,15 @@ async function logout ({ refreshToken }: LogoutInput): Promise<UserType> {
     }
 }
 
-async function findUsersBySearchQuery ({ searchQuery, limit, userId }: { searchQuery: string, limit: number, userId: string }) {
+interface FindUsersBySearchQueryOptions {
+    userId: string
+    searchQuery: string
+    limit: number
+}
+
+type FindUsersBySearchQueryReturnValue = Omit<UserType, 'accessToken' | 'refreshToken'>[]
+
+async function findUsersBySearchQuery ({ searchQuery, limit, userId }: FindUsersBySearchQueryOptions): Promise<FindUsersBySearchQueryReturnValue> {
     const regex = new RegExp(searchQuery, 'i')
     return User
         .find({
@@ -158,7 +178,12 @@ async function findUsersBySearchQuery ({ searchQuery, limit, userId }: { searchQ
         .limit(limit)
 }
 
-async function followUser ({ followingUserId, followedUserId }: { followingUserId: string, followedUserId: string }) {
+interface FollowUserOptions {
+    followingUserId: string
+    followedUserId: string
+}
+
+async function followUser ({ followingUserId, followedUserId }: FollowUserOptions): Promise<FollowType> {
     try {
         if (!await User.findById(followingUserId)) {
             return Promise.reject(getCustomValidationError('followingUserId', `User with id ${followingUserId} does not exist`))
@@ -186,7 +211,12 @@ async function followUser ({ followingUserId, followedUserId }: { followingUserI
     }
 }
 
-async function unfollowUser ({ followingUserId, followedUserId }: { followingUserId: string, followedUserId: string }) {
+interface UnfollowUserOptions {
+    followingUserId: string
+    followedUserId: string
+}
+
+async function unfollowUser ({ followingUserId, followedUserId }: UnfollowUserOptions): Promise<FollowType> {
     try {
         if (!await User.findById(followingUserId)) {
             return Promise.reject(getCustomValidationError('followingUserId', `User with id ${followingUserId} does not exist`))
@@ -206,7 +236,23 @@ async function unfollowUser ({ followingUserId, followedUserId }: { followingUse
     }
 }
 
-async function getSuggestedUsers ({ userId }: { userId: string }) {
+interface GetSuggestedUsersOptions {
+    userId: string
+}
+
+interface SuggestedUser {
+    _id: mongoose.Types.ObjectId
+    username: string
+    firstName: string
+    lastName: string
+    avatarURL: string | null
+    latestFollow: Omit<UserType, 'password' | 'accessToken' | 'refreshToken'> | null
+    followedCount: number
+}
+
+type GetSuggestedUsersReturnValue = SuggestedUser[]
+
+async function getSuggestedUsers ({ userId }: GetSuggestedUsersOptions): Promise<GetSuggestedUsersReturnValue> {
     try {
         if (!await User.findById(userId)) {
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
