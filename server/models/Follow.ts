@@ -1,4 +1,4 @@
-import { Schema, InferSchemaType, model } from 'mongoose'
+import { Schema, Types, model } from 'mongoose'
 
 
 const FollowSchema = new Schema({
@@ -14,6 +14,10 @@ const FollowSchema = new Schema({
     }
 }, { timestamps: true })
 
-export type FollowType = InferSchemaType<typeof FollowSchema>
+export interface FollowType {
+    _id: Types.ObjectId
+    followingUserId: string
+    followedUserId: string
+}
 
 export default model('Follow', FollowSchema)
