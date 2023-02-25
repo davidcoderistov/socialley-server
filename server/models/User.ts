@@ -1,4 +1,4 @@
-import { Schema, InferSchemaType, model } from 'mongoose'
+import { Schema, Types, model } from 'mongoose'
 
 
 const UserSchema = new Schema({
@@ -30,9 +30,20 @@ const UserSchema = new Schema({
         required: [true, 'Password is required'],
     },
     avatarURL: String,
+    accessToken: String,
     refreshToken: String,
 })
 
-export type UserType = InferSchemaType<typeof UserSchema>
+export interface UserType {
+    _id: Types.ObjectId
+    firstName: string
+    lastName: string
+    username: string
+    email: string
+    password: string
+    avatarURL?: string | null
+    accessToken?: string | null
+    refreshToken?: string | null
+}
 
 export default model('User', UserSchema)
