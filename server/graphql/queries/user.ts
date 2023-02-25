@@ -28,7 +28,7 @@ const SuggestedUser = new GraphQLObjectType({
 })
 const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     getUsersBySearchQuery: {
-        type: new GraphQLList(User),
+        type: new GraphQLNonNull(new GraphQLList(User)),
         args: {
             searchQuery: { type: new GraphQLNonNull(GraphQLString) },
             limit: { type: new GraphQLNonNull(GraphQLInt) },
