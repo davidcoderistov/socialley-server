@@ -3,16 +3,14 @@ import {
     GraphQLNonNull,
     GraphQLString,
     GraphQLInt,
-    GraphQLBoolean,
     GraphQLList,
     ThunkObjMap,
     GraphQLFieldConfig,
 } from 'graphql'
-import { DateScalar } from '../scalars'
 import User from '../models/user/User'
 import FollowableUser from '../models/user/FollowableUser'
-import PublicUser from '../models/PublicUser'
 import Comment from '../models/Comment'
+import Post from '../models/Post'
 import { Context } from '../types'
 import postsRepository from '../../repositories/postsRepository'
 
@@ -25,25 +23,11 @@ const CommentsForPostOutput = new GraphQLObjectType({
     })
 })
 
-const FollowedUser = new GraphQLObjectType({
-    name: 'FollowedUser',
-    fields: () => ({...PublicUser.toConfig().fields})
-})
-
 const FollowedUserPost = new GraphQLObjectType({
     name: 'FollowedUserPost',
     fields: () => ({
-        _id: { type: new GraphQLNonNull(GraphQLString) },
-        title: { type: GraphQLString },
-        photoURL: { type: new GraphQLNonNull(GraphQLString) },
-        videoURL: { type: GraphQLString },
-        user: { type: new GraphQLNonNull(FollowedUser) },
-        firstLikeUser: { type: PublicUser },
-        liked: { type: new GraphQLNonNull(GraphQLBoolean) },
-        favorite: { type: new GraphQLNonNull(GraphQLBoolean) },
-        likesCount: { type: new GraphQLNonNull(GraphQLInt) },
+        post: { type: new GraphQLNonNull(Post) },
         commentsCount: { type: new GraphQLNonNull(GraphQLInt) },
-        createdAt: { type: new GraphQLNonNull(DateScalar) },
     })
 })
 
@@ -95,14 +79,22 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         },
         resolve: (_, args, { userId }) => postsRepository.getCommentsForPost({ ...args, userId })
     },
-    getFollowedUsersPostsPaginated: {
+    getFollowedUsersPosts: {
         type: FollowedUsersPostsPaginated,
         args: {
             offset: { type: new GraphQLNonNull(GraphQLInt) },
             limit: { type: new GraphQLNonNull(GraphQLInt) },
         },
-        resolve: (_, { offset, limit }, { userId }) =>
-            postsRepository.getFollowedUsersPostsPaginated({ userId, offset, limit })
+        resolve: async (_, { offset, limit }, { userId }) => {
+            const followedUsersPosts = await postsRepository.getFollowedUsersPosts({ userId, offset, limit })
+            return {
+                ...followedUsersPosts,
+                data: followedUsersPosts.data.map(followedUserPost => ({
+                    ...followedUserPost,
+                    post: followedUserPost,
+                }))
+            }
+        }
     },
     getUsersWhoLikedPost: {
         type: UsersWhoLikedPostOutput,
