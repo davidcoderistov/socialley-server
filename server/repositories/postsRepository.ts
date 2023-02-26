@@ -1,16 +1,19 @@
-import Post from '../models/Post'
-import Comment from '../models/Comment'
-import PostLike from '../models/PostLike'
-import UserFavorite from '../models/UserFavorite'
-import CommentLike from '../models/CommentLike'
+import Post, { PostType } from '../models/Post'
+import Comment, { CommentType } from '../models/Comment'
+import PostLike, { PostLikeType } from '../models/PostLike'
+import UserFavorite, { UserFavoriteType } from '../models/UserFavorite'
+import CommentLike, { CommentLikeType } from '../models/CommentLike'
 import Follow from '../models/Follow'
 import User, { UserType } from '../models/User'
-import { PublicUser } from '../graphql/types'
 import { FileUpload } from 'graphql-upload-ts'
 import { Error, Document } from 'mongoose'
 import { getValidationError, getCustomValidationError } from '../utils'
 import fileRepository from './fileRepository'
 
+
+interface Post extends Document {
+    userId: UserType
+}
 
 interface CreatePostOptions {
     title?: string | null
@@ -19,11 +22,11 @@ interface CreatePostOptions {
     userId: string
 }
 
-interface Post extends Document {
-    userId: UserType
+interface CreatePostReturnValue extends PostType {
+    user: UserType
 }
 
-async function createPost ({ title = null, photo, video = null, userId }: CreatePostOptions) {
+async function createPost ({ title = null, photo, video = null, userId }: CreatePostOptions): Promise<CreatePostReturnValue> {
     try {
         if (!await User.findById(userId)) {
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
@@ -64,7 +67,7 @@ interface CreateCommentOptions {
     userId: string
 }
 
-async function createComment ({ text, postId, userId }: CreateCommentOptions) {
+async function createComment ({ text, postId, userId }: CreateCommentOptions): Promise<CommentType> {
     try {
         if (!await Post.findById(postId)) {
             return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
@@ -94,7 +97,7 @@ interface LikePostOptions {
     userId: string
 }
 
-async function likePost ({ postId, userId }: LikePostOptions) {
+async function likePost ({ postId, userId }: LikePostOptions): Promise<PostLikeType> {
     try {
         if (!await Post.findById(postId)) {
             return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
@@ -127,7 +130,7 @@ interface UnlikePostOptions {
     userId: string
 }
 
-async function unlikePost ({ postId, userId }: UnlikePostOptions) {
+async function unlikePost ({ postId, userId }: UnlikePostOptions): Promise<PostLikeType> {
     try {
         if (!await Post.findById(postId)) {
             return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
@@ -158,7 +161,7 @@ interface LikeCommentOptions {
     userId: string
 }
 
-async function likeComment ({ commentId, userId }: LikeCommentOptions) {
+async function likeComment ({ commentId, userId }: LikeCommentOptions): Promise<CommentLikeType> {
     try {
         if (!await Comment.findById(commentId)) {
             return Promise.reject(getCustomValidationError('commentId', `Comment with id ${commentId} does not exist`))
@@ -191,7 +194,7 @@ interface UnlikeCommentOptions {
     userId: string
 }
 
-async function unlikeComment ({ commentId, userId }: UnlikeCommentOptions) {
+async function unlikeComment ({ commentId, userId }: UnlikeCommentOptions): Promise<CommentLikeType> {
     try {
         if (!await Comment.findById(commentId)) {
             return Promise.reject(getCustomValidationError('commentId', `Comment with id ${commentId} does not exist`))
@@ -217,7 +220,29 @@ async function unlikeComment ({ commentId, userId }: UnlikeCommentOptions) {
     }
 }
 
-async function getCommentsForPost ({ postId, userId, offset, limit }: { postId: string, userId: string, offset: number, limit: number }) {
+interface GetCommentsForPostOptions {
+    postId: string
+    userId: string
+    offset: number
+    limit: number
+}
+
+interface CommentWithLike {
+    _id: string
+    text: string
+    postId: string
+    user: UserType
+    liked: boolean
+    createdAt: string
+    likesCount: number
+}
+
+interface GetCommentsForPostReturnValue {
+    total: number
+    data: CommentWithLike[]
+}
+
+async function getCommentsForPost ({ postId, userId, offset, limit }: GetCommentsForPostOptions): Promise<GetCommentsForPostReturnValue> {
     const aggregateData = await Comment.aggregate([
         {
             $match: { postId },
@@ -294,7 +319,27 @@ async function getCommentsForPost ({ postId, userId, offset, limit }: { postId: 
     }
 }
 
-async function getFollowedUsersPostsPaginated ({ userId, offset, limit }: { userId: string, offset: number, limit: number }) {
+interface GetFollowedUsersPostsPaginatedOptions {
+    userId: string
+    offset: number
+    limit: number
+}
+
+interface FollowedUserPost extends PostType {
+    commentsCount: number
+    likesCount: number
+    liked: boolean
+    favorite: boolean
+    user: UserType
+    firstLikeUser: UserType | null
+}
+
+interface GetFollowedUsersPostsPaginatedReturnValue {
+    total: number
+    data: FollowedUserPost[]
+}
+
+async function getFollowedUsersPostsPaginated ({ userId, offset, limit }: GetFollowedUsersPostsPaginatedOptions): Promise<GetFollowedUsersPostsPaginatedReturnValue> {
     try {
         if (!await User.findById(userId)) {
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
@@ -454,11 +499,16 @@ interface GetUsersWhoLikedPostOptions {
     limit: number
 }
 
-interface LikingUser extends PublicUser {
+interface LikingUser extends UserType {
     following: boolean
 }
 
-async function getUsersWhoLikedPost ({ postId, userId, offset, limit }: GetUsersWhoLikedPostOptions): Promise<{ total: number, data: Array<LikingUser> }> {
+interface GetUsersWhoLikedPostReturnValue {
+    total: number
+    data: LikingUser[]
+}
+
+async function getUsersWhoLikedPost ({ postId, userId, offset, limit }: GetUsersWhoLikedPostOptions): Promise<GetUsersWhoLikedPostReturnValue> {
     try {
         if (!await Post.findById(postId)) {
             return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
@@ -529,7 +579,12 @@ interface GetUsersWhoLikedCommentOptions {
     limit: number
 }
 
-async function getUsersWhoLikedComment ({ commentId, userId, offset, limit }: GetUsersWhoLikedCommentOptions): Promise<{ total: number, data: Array<LikingUser> }> {
+interface GetUsersWhoLikedCommentReturnValue {
+    total: number
+    data: LikingUser[]
+}
+
+async function getUsersWhoLikedComment ({ commentId, userId, offset, limit }: GetUsersWhoLikedCommentOptions): Promise<GetUsersWhoLikedCommentReturnValue> {
     try {
         if (!await Comment.findById(commentId)) {
             return Promise.reject(getCustomValidationError('commentId', `Comment with id ${commentId} does not exist`))
@@ -598,7 +653,7 @@ interface MarkUserPostAsFavoriteOptions {
     postId: string
 }
 
-async function markUserPostAsFavorite ({ userId, postId }: MarkUserPostAsFavoriteOptions) {
+async function markUserPostAsFavorite ({ userId, postId }: MarkUserPostAsFavoriteOptions): Promise<UserFavoriteType> {
     try {
         if (!await Post.findById(postId)) {
             return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
@@ -631,7 +686,7 @@ interface UnmarkUserPostAsFavoriteOptions {
     postId: string
 }
 
-async function unmarkUserPostAsFavorite ({ userId, postId }: UnmarkUserPostAsFavoriteOptions) {
+async function unmarkUserPostAsFavorite ({ userId, postId }: UnmarkUserPostAsFavoriteOptions): Promise<UserFavoriteType> {
     try {
         if (!await Post.findById(postId)) {
             return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
@@ -657,7 +712,7 @@ async function unmarkUserPostAsFavorite ({ userId, postId }: UnmarkUserPostAsFav
     }
 }
 
-async function getFirstLikingUserForPost ({ postId }: { postId : string }) {
+async function getFirstLikingUserForPost ({ postId }: { postId : string }): Promise<UserType | null> {
     try {
         if (!await Post.findById(postId)) {
             return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
