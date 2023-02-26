@@ -11,27 +11,15 @@ import {
 import { DateScalar } from '../scalars'
 import FollowableUser from '../models/user/FollowableUser'
 import PublicUser from '../models/PublicUser'
+import Comment from '../models/Comment'
 import { Context } from '../types'
 import postsRepository from '../../repositories/postsRepository'
 
 
-const CommentWithLike = new GraphQLObjectType({
-    name: 'CommentWithLike',
-    fields: () => ({
-        _id: { type: new GraphQLNonNull(GraphQLString) },
-        text: { type: new GraphQLNonNull(GraphQLString) },
-        postId: { type: new GraphQLNonNull(GraphQLString) },
-        user: { type: new GraphQLNonNull(PublicUser) },
-        liked: { type: new GraphQLNonNull(GraphQLBoolean) },
-        likesCount: { type: new GraphQLNonNull(GraphQLInt) },
-        createdAt: { type: new GraphQLNonNull(DateScalar) },
-    })
-})
-
 const CommentsForPostOutput = new GraphQLObjectType({
     name: 'CommentsForPostOutput',
     fields: () => ({
-        data: { type: new GraphQLNonNull(new GraphQLList(CommentWithLike)) },
+        data: { type: new GraphQLNonNull(new GraphQLList(Comment)) },
         total: { type: new GraphQLNonNull(GraphQLInt) },
     })
 })
