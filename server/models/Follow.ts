@@ -1,4 +1,4 @@
-import { Schema, Types, model } from 'mongoose'
+import { Schema, Types, model, SchemaTimestampsConfig } from 'mongoose'
 
 
 const FollowSchema = new Schema({
@@ -14,10 +14,10 @@ const FollowSchema = new Schema({
     }
 }, { timestamps: true })
 
-export interface FollowType {
+export type FollowType = {
     _id: Types.ObjectId
     followingUserId: string
     followedUserId: string
-}
+} & SchemaTimestampsConfig
 
 export default model('Follow', FollowSchema)
