@@ -7,7 +7,6 @@ import {
     GraphQLList,
     ThunkObjMap,
     GraphQLFieldConfig,
-    GraphQLID,
 } from 'graphql'
 import { DateScalar } from '../scalars'
 import FollowableUser from '../models/user/FollowableUser'
@@ -67,19 +66,6 @@ const FollowedUsersPostsPaginated = new GraphQLObjectType({
     })
 })
 
-const LikingUser = new GraphQLObjectType({
-    name: 'LikingUser',
-    fields: () => ({
-        _id: { type: new GraphQLNonNull(GraphQLID) },
-        username: { type: new GraphQLNonNull(GraphQLString) },
-        firstName: { type: new GraphQLNonNull(GraphQLString) },
-        lastName: { type: new GraphQLNonNull(GraphQLString) },
-        email: { type: new GraphQLNonNull(GraphQLString) },
-        avatarURL: { type: GraphQLString },
-        following: { type: new GraphQLNonNull(GraphQLBoolean) }
-    })
-})
-
 const UserWhoLikedPost = new GraphQLObjectType({
     name: 'UserWhoLikedPost',
     fields: () => ({
@@ -95,10 +81,17 @@ const UsersWhoLikedPostOutput = new GraphQLObjectType({
     })
 })
 
+const UserWhoLikedComment = new GraphQLObjectType({
+    name: 'UserWhoLikedComment',
+    fields: () => ({
+        followableUser: { type: new GraphQLNonNull(FollowableUser) }
+    })
+})
+
 const UsersWhoLikedCommentOutput = new GraphQLObjectType({
     name: 'UsersWhoLikedCommentOutput',
     fields: () => ({
-        data: { type: new GraphQLNonNull(new GraphQLList(LikingUser)) },
+        data: { type: new GraphQLNonNull(new GraphQLList(UserWhoLikedComment)) },
         total: { type: new GraphQLNonNull(GraphQLInt) },
     })
 })
@@ -149,7 +142,18 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             offset: { type: new GraphQLNonNull(GraphQLInt) },
             limit: { type: new GraphQLNonNull(GraphQLInt) },
         },
-        resolve: (_, args, { userId }) => postsRepository.getUsersWhoLikedComment({ ...args,userId })
+        resolve: async (_, args, { userId }) => {
+            const usersWhoLikedComment = await postsRepository.getUsersWhoLikedComment({ ...args,userId })
+            return {
+                ...usersWhoLikedComment,
+                data: usersWhoLikedComment.data.map(userWhoLikedComment => ({
+                    followableUser: {
+                        user: userWhoLikedComment,
+                        following: userWhoLikedComment.following
+                    }
+                }))
+            }
+        }
     },
     getFirstLikingUserForPost: {
         type: PublicUser,
