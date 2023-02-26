@@ -9,6 +9,7 @@ import {
     GraphQLFieldConfig,
 } from 'graphql'
 import { DateScalar } from '../scalars'
+import User from '../models/user/User'
 import FollowableUser from '../models/user/FollowableUser'
 import PublicUser from '../models/PublicUser'
 import Comment from '../models/Comment'
@@ -143,8 +144,8 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             }
         }
     },
-    getFirstLikingUserForPost: {
-        type: PublicUser,
+    getFirstUserWhoLikedPost: {
+        type: User,
         args: { postId: { type: new GraphQLNonNull(GraphQLString) }},
         resolve: (_, { postId }) => postsRepository.getFirstLikingUserForPost({ postId })
     }
