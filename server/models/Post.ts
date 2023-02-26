@@ -1,4 +1,4 @@
-import { Schema, InferSchemaType, model } from 'mongoose'
+import { Schema, Types, model, SchemaTimestampsConfig } from 'mongoose'
 
 
 const PostSchema = new Schema({
@@ -15,6 +15,12 @@ const PostSchema = new Schema({
     }
 }, { timestamps: true })
 
-export type PostType = InferSchemaType<typeof PostSchema>
+export type PostType = {
+    _id: Types.ObjectId
+    title?: string | null
+    photoURL: string
+    videoURL: string | null
+    userId: string
+} & SchemaTimestampsConfig
 
 export default model('Post', PostSchema)
