@@ -15,7 +15,6 @@ const User = new GraphQLObjectType({
         lastName: { type: new GraphQLNonNull(GraphQLString) },
         email: { type: new GraphQLNonNull(GraphQLString) },
         avatarURL: { type: GraphQLString },
-        accessToken: { type: GraphQLString },
     })
 })
 

@@ -6,7 +6,7 @@ import {
     GraphQLInt,
 } from 'graphql'
 import { DateScalar } from '../scalars'
-import User from './user/User'
+import User from './User'
 
 
 const Comment = new GraphQLObjectType({

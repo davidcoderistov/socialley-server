@@ -7,7 +7,7 @@ import {
     GraphQLNonNull,
 } from 'graphql'
 import { DateScalar } from '../scalars'
-import User from './user/User'
+import User from './User'
 
 
 const Post = new GraphQLObjectType({

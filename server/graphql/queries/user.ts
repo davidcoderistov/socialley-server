@@ -7,8 +7,8 @@ import {
     GraphQLInt,
     GraphQLObjectType,
 } from 'graphql'
-import User from '../models/user/User'
-import FollowableUser from '../models/user/FollowableUser'
+import User from '../models/User'
+import FollowableUser from '../models/FollowableUser'
 import { Context } from '../types'
 import userRepository from '../../repositories/userRepository'
 

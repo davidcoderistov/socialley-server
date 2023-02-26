@@ -6,8 +6,8 @@ import {
     GraphQLString,
 } from 'graphql'
 import userRepository from '../../repositories/userRepository'
-import User from '../models/user/User'
-import AuthUser from '../models/user/AuthUser'
+import User from '../models/User'
+import AuthUser from '../models/AuthUser'
 import { Context } from '../types'
 
 
