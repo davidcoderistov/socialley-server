@@ -1,4 +1,4 @@
-import { Schema, InferSchemaType, model } from 'mongoose'
+import { Schema, Types, model, SchemaTimestampsConfig } from 'mongoose'
 
 
 const UserFavoriteSchema = new Schema({
@@ -14,6 +14,10 @@ const UserFavoriteSchema = new Schema({
     }
 }, { timestamps: true })
 
-export type UserFavoriteType = InferSchemaType<typeof UserFavoriteSchema>
+export type UserFavoriteType = {
+    _id: Types.ObjectId
+    postId: string
+    userId: string
+} & SchemaTimestampsConfig
 
 export default model('UserFavorite', UserFavoriteSchema)
