@@ -339,7 +339,7 @@ interface GetFollowedUsersPostsPaginatedReturnValue {
     data: FollowedUserPost[]
 }
 
-async function getFollowedUsersPostsPaginated ({ userId, offset, limit }: GetFollowedUsersPostsPaginatedOptions): Promise<GetFollowedUsersPostsPaginatedReturnValue> {
+async function getFollowedUsersPosts ({ userId, offset, limit }: GetFollowedUsersPostsPaginatedOptions): Promise<GetFollowedUsersPostsPaginatedReturnValue> {
     try {
         if (!await User.findById(userId)) {
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
@@ -740,7 +740,7 @@ export default {
     likeComment,
     unlikeComment,
     getCommentsForPost,
-    getFollowedUsersPostsPaginated,
+    getFollowedUsersPosts,
     getUsersWhoLikedPost,
     getUsersWhoLikedComment,
     markUserPostAsFavorite,
