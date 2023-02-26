@@ -1,4 +1,4 @@
-import { Schema, InferSchemaType, model } from 'mongoose'
+import { Schema, Types, model, SchemaTimestampsConfig } from 'mongoose'
 
 
 const CommentLikeSchema = new Schema({
@@ -14,6 +14,10 @@ const CommentLikeSchema = new Schema({
     }
 }, { timestamps: true })
 
-export type CommentLikeType = InferSchemaType<typeof CommentLikeSchema>
+export type CommentLikeType = {
+    _id: Types.ObjectId
+    commentId: string
+    userId: string
+} & SchemaTimestampsConfig
 
 export default model('CommentLike', CommentLikeSchema)
