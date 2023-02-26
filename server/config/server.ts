@@ -15,7 +15,7 @@ import {
     getUserIdFromConnectionParams,
     getInvalidSessionError
 } from '../utils'
-import { Context } from '../graphql/types'
+import { Context } from '../types'
 import schema from '../graphql/schema'
 import { PubSub } from 'graphql-subscriptions'
 

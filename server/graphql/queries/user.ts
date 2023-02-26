@@ -9,7 +9,7 @@ import {
 } from 'graphql'
 import User from '../models/User'
 import FollowableUser from '../models/FollowableUser'
-import { Context } from '../types'
+import { Context } from '../../types'
 import userRepository from '../../repositories/userRepository'
 
 

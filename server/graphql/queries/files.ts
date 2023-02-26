@@ -4,7 +4,7 @@ import {
     GraphQLNonNull,
     GraphQLString,
 } from 'graphql'
-import { Context } from '../types'
+import { Context } from '../../types'
 import fileRepository from '../../repositories/fileRepository'
 
 

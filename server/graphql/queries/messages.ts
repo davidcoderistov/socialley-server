@@ -9,7 +9,7 @@ import {
 } from 'graphql'
 import FullMessage from '../models/FullMessage'
 import Message from '../models/Message'
-import { Context } from '../types'
+import { Context } from '../../types'
 import messagesRepository from '../../repositories/messagesRepository'
 
 

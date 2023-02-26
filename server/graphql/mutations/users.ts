@@ -6,7 +6,7 @@ import {
 } from 'graphql'
 import userRepository from '../../repositories/userRepository'
 import Follow from '../models/Follow'
-import { Context } from '../types'
+import { Context } from '../../types'
 
 
 const usersMutations:  ThunkObjMap<GraphQLFieldConfig<any, Context>> = {

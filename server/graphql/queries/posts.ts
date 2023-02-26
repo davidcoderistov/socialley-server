@@ -11,7 +11,7 @@ import User from '../models/User'
 import FollowableUser from '../models/FollowableUser'
 import Comment from '../models/Comment'
 import Post from '../models/Post'
-import { Context } from '../types'
+import { Context } from '../../types'
 import postsRepository from '../../repositories/postsRepository'
 
 

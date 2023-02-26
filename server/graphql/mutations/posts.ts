@@ -6,7 +6,7 @@ import {
     GraphQLString,
 } from 'graphql'
 import { GraphQLUpload } from 'graphql-upload-ts'
-import { Context } from '../types'
+import { Context } from '../../types'
 import Post from '../models/Post'
 import Comment from '../models/Comment'
 import PostLike from '../models/PostLike'

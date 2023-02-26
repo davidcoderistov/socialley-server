@@ -8,7 +8,7 @@ import {
 import userRepository from '../../repositories/userRepository'
 import User from '../models/User'
 import AuthUser from '../models/AuthUser'
-import { Context } from '../types'
+import { Context } from '../../types'
 
 
 const SignUpOptions = new GraphQLInputObjectType({

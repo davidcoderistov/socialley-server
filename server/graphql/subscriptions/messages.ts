@@ -4,7 +4,7 @@ import {
 } from 'graphql'
 import FullMessage from '../models/FullMessage'
 import { pubsub } from '../../config/server'
-import { WsContext } from '../types'
+import { WsContext } from '../../types'
 import { withFilter } from 'graphql-subscriptions'
 import { Types } from 'mongoose'
 

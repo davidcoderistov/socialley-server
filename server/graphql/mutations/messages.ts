@@ -8,7 +8,7 @@ import {
 import { GraphQLUpload } from 'graphql-upload-ts'
 import FullMessage from '../models/FullMessage'
 import messagesRepository from '../../repositories/messagesRepository'
-import { Context } from '../types'
+import { Context } from '../../types'
 import { pubsub } from '../../config/server'
 import { MESSAGES_SUBSCRIPTIONS } from '../subscriptions/messages'
 
