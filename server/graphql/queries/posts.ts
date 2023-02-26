@@ -10,6 +10,7 @@ import {
     GraphQLID,
 } from 'graphql'
 import { DateScalar } from '../scalars'
+import FollowableUser from '../models/user/FollowableUser'
 import PublicUser from '../models/PublicUser'
 import { Context } from '../types'
 import postsRepository from '../../repositories/postsRepository'
@@ -79,10 +80,17 @@ const LikingUser = new GraphQLObjectType({
     })
 })
 
+const UserWhoLikedPost = new GraphQLObjectType({
+    name: 'UserWhoLikedPost',
+    fields: () => ({
+        followableUser: { type: new GraphQLNonNull(FollowableUser) }
+    })
+})
+
 const UsersWhoLikedPostOutput = new GraphQLObjectType({
     name: 'UsersWhoLikedPostOutput',
     fields: () => ({
-        data: { type: new GraphQLNonNull(new GraphQLList(LikingUser)) },
+        data: { type: new GraphQLNonNull(new GraphQLList(UserWhoLikedPost)) },
         total: { type: new GraphQLNonNull(GraphQLInt) },
     })
 })
@@ -121,7 +129,18 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             offset: { type: new GraphQLNonNull(GraphQLInt) },
             limit: { type: new GraphQLNonNull(GraphQLInt) },
         },
-        resolve: (_, args, { userId }) => postsRepository.getUsersWhoLikedPost({ ...args,userId })
+        resolve: async (_, args, { userId }) => {
+            const usersWhoLikedPost = await postsRepository.getUsersWhoLikedPost({ ...args,userId })
+            return {
+                ...usersWhoLikedPost,
+                data: usersWhoLikedPost.data.map(userWhoLikedPost => ({
+                    followableUser: {
+                        user: userWhoLikedPost,
+                        following: userWhoLikedPost.following
+                    }
+                }))
+            }
+        }
     },
     getUsersWhoLikedComment: {
         type: UsersWhoLikedCommentOutput,
