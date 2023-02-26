@@ -246,7 +246,7 @@ interface SuggestedUser {
     firstName: string
     lastName: string
     avatarURL: string | null
-    latestFollow: Omit<UserType, 'password' | 'accessToken' | 'refreshToken'> | null
+    latestFollower: Omit<UserType, 'password' | 'accessToken' | 'refreshToken'> | null
     followedCount: number
 }
 
