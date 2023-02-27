@@ -226,7 +226,13 @@ async function unfollowUser ({ followingUserId, followedUserId }: UnfollowUserOp
             return Promise.reject(getCustomValidationError('followedUserId', `User with id ${followedUserId} does not exist`))
         }
 
-        return await Follow.findOneAndDelete({ followingUserId, followedUserId })
+        const follow = await Follow.findOneAndDelete({ followingUserId, followedUserId })
+
+        if (!follow) {
+            return Promise.reject(getCustomValidationError('followedUserId', `User with id ${followedUserId} does not exist`))
+        }
+
+        return follow
     } catch (err) {
         if (err instanceof Error.ValidationError) {
             throw getValidationError(err)
