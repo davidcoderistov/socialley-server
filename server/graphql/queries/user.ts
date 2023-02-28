@@ -46,6 +46,28 @@ const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
                 followedCount: suggestedUser.followedCount,
             }))
         }
+    },
+    getFollowingForUser: {
+        type: new GraphQLNonNull(new GraphQLList(FollowableUser)),
+        args: { userId: { type: new GraphQLNonNull(GraphQLString) }},
+        resolve: async (_, { userId }, { userId: loggedInUserId }) => {
+            const following = await userRepository.getFollowingForUser({ userId, loggedInUserId })
+            return following.map(following => ({
+                user: following.followedUser,
+                following: following.following
+            }))
+        }
+    },
+    getFollowersForUser: {
+        type: new GraphQLNonNull(new GraphQLList(FollowableUser)),
+        args: { userId: { type: new GraphQLNonNull(GraphQLString) }},
+        resolve: async (_, { userId }, { userId: loggedInUserId }) => {
+            const followers = await userRepository.getFollowersForUser({ userId, loggedInUserId })
+            return followers.map(follower => ({
+                user: follower.followingUser,
+                following: follower.following,
+            }))
+        }
     }
 }
 
