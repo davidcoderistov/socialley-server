@@ -456,6 +456,75 @@ async function getSuggestedUsers ({ userId }: GetSuggestedUsersOptions): Promise
     }
 }
 
+interface GetFollowersForUserOptions {
+    userId: string
+    loggedInUserId: string
+}
+
+interface UserFollower {
+    _id: string
+    followedUserId: string
+    followingUser: UserType
+    following: boolean
+    createdAt: string
+}
+
+type GetFollowersForUserReturnValue = UserFollower[]
+
+async function getFollowersForUser ({ userId, loggedInUserId }: GetFollowersForUserOptions): Promise<GetFollowersForUserReturnValue> {
+    try {
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        if (!await User.findById(loggedInUserId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${loggedInUserId} does not exist`))
+        }
+
+        const userFollowsForLoggedInUser = await Follow.find({ followingUserId: loggedInUserId }).select('followedUserId')
+        const followedUsersIdsForLoggedInUser = userFollowsForLoggedInUser.map(follow => follow.followedUserId)
+        followedUsersIdsForLoggedInUser.push(loggedInUserId)
+
+        return await Follow.aggregate([
+            {
+                $match: { followedUserId: userId }
+            },
+            {
+                $addFields: {
+                    following: { $in: ['$followingUserId', followedUsersIdsForLoggedInUser] },
+                    followingUserObjectId: { $toObjectId: '$followingUserId' }
+                }
+            },
+            {
+                $lookup: {
+                    from: User.collection.name,
+                    localField: 'followingUserObjectId',
+                    foreignField: '_id',
+                    as: 'followingUsers'
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    followedUserId: 1,
+                    followingUser: { $ifNull: [ { $arrayElemAt: [ '$followingUsers', 0 ] }, null ] },
+                    following: 1,
+                    createdAt: 1,
+                }
+            },
+            {
+                $sort: { following: -1, createdAt: -1 }
+            }
+        ])
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     signUp,
     login,
@@ -465,4 +534,5 @@ export default {
     followUser,
     unfollowUser,
     getSuggestedUsers,
+    getFollowersForUser,
 }
