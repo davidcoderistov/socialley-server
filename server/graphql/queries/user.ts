@@ -29,10 +29,26 @@ const FollowingUser = new GraphQLObjectType({
     })
 })
 
+const FollowingUsersOutput = new GraphQLObjectType({
+    name: 'FollowingUsersOutput',
+    fields: () => ({
+        data: { type: new GraphQLNonNull(new GraphQLList(FollowingUser)) },
+        total: { type: new GraphQLNonNull(GraphQLInt) },
+    })
+})
+
 const FollowerUser = new GraphQLObjectType({
     name: 'FollowerUser',
     fields: () => ({
         followableUser: { type: new GraphQLNonNull(FollowableUser) }
+    })
+})
+
+const FollowerUsersOutput = new GraphQLObjectType({
+    name: 'FollowerUsersOutput',
+    fields: () => ({
+        data: { type: new GraphQLNonNull(new GraphQLList(FollowerUser)) },
+        total: { type: new GraphQLNonNull(GraphQLInt) },
     })
 })
 
@@ -62,29 +78,43 @@ const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         }
     },
     getFollowingForUser: {
-        type: new GraphQLNonNull(new GraphQLList(FollowingUser)),
-        args: { userId: { type: new GraphQLNonNull(GraphQLString) }},
-        resolve: async (_, { userId }, { userId: loggedInUserId }) => {
-            const following = await userRepository.getFollowingForUser({ userId, loggedInUserId })
-            return following.map(following => ({
-                followableUser: {
-                    user: following.followedUser,
-                    following: following.following
-                }
-            }))
+        type: FollowingUsersOutput,
+        args: {
+            userId: { type: new GraphQLNonNull(GraphQLString) },
+            offset: { type: new GraphQLNonNull(GraphQLInt) },
+            limit: { type: new GraphQLNonNull(GraphQLInt) },
+        },
+        resolve: async (_, { userId, offset, limit }, { userId: loggedInUserId }) => {
+            const following = await userRepository.getFollowingForUser({ userId, loggedInUserId, offset, limit })
+            return {
+                data: following.data.map(following => ({
+                    followableUser: {
+                        user: following.followedUser,
+                        following: following.following
+                    }
+                })),
+                total: following.total
+            }
         }
     },
     getFollowersForUser: {
-        type: new GraphQLNonNull(new GraphQLList(FollowerUser)),
-        args: { userId: { type: new GraphQLNonNull(GraphQLString) }},
-        resolve: async (_, { userId }, { userId: loggedInUserId }) => {
-            const followers = await userRepository.getFollowersForUser({ userId, loggedInUserId })
-            return followers.map(follower => ({
-                followableUser: {
-                    user: follower.followingUser,
-                    following: follower.following,
-                }
-            }))
+        type: FollowerUsersOutput,
+        args: {
+            userId: { type: new GraphQLNonNull(GraphQLString) },
+            offset: { type: new GraphQLNonNull(GraphQLInt) },
+            limit: { type: new GraphQLNonNull(GraphQLInt) },
+        },
+        resolve: async (_, { userId, offset, limit }, { userId: loggedInUserId }) => {
+            const followers = await userRepository.getFollowersForUser({ userId, loggedInUserId, offset, limit })
+            return {
+                data: followers.data.map(follower => ({
+                    followableUser: {
+                        user: follower.followingUser,
+                        following: follower.following,
+                    }
+                })),
+                total: followers.total
+            }
         }
     }
 }
