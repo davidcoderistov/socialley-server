@@ -22,6 +22,20 @@ const SuggestedUser = new GraphQLObjectType({
     })
 })
 
+const FollowingUser = new GraphQLObjectType({
+    name: 'FollowingUser',
+    fields: () => ({
+        followableUser: { type: new GraphQLNonNull(FollowableUser) }
+    })
+})
+
+const FollowerUser = new GraphQLObjectType({
+    name: 'FollowerUser',
+    fields: () => ({
+        followableUser: { type: new GraphQLNonNull(FollowableUser) }
+    })
+})
+
 const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     getUsersBySearchQuery: {
         type: new GraphQLNonNull(new GraphQLList(User)),
@@ -48,24 +62,28 @@ const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         }
     },
     getFollowingForUser: {
-        type: new GraphQLNonNull(new GraphQLList(FollowableUser)),
+        type: new GraphQLNonNull(new GraphQLList(FollowingUser)),
         args: { userId: { type: new GraphQLNonNull(GraphQLString) }},
         resolve: async (_, { userId }, { userId: loggedInUserId }) => {
             const following = await userRepository.getFollowingForUser({ userId, loggedInUserId })
             return following.map(following => ({
-                user: following.followedUser,
-                following: following.following
+                followableUser: {
+                    user: following.followedUser,
+                    following: following.following
+                }
             }))
         }
     },
     getFollowersForUser: {
-        type: new GraphQLNonNull(new GraphQLList(FollowableUser)),
+        type: new GraphQLNonNull(new GraphQLList(FollowerUser)),
         args: { userId: { type: new GraphQLNonNull(GraphQLString) }},
         resolve: async (_, { userId }, { userId: loggedInUserId }) => {
             const followers = await userRepository.getFollowersForUser({ userId, loggedInUserId })
             return followers.map(follower => ({
-                user: follower.followingUser,
-                following: follower.following,
+                followableUser: {
+                    user: follower.followingUser,
+                    following: follower.following,
+                }
             }))
         }
     }
