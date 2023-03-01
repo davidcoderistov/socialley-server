@@ -350,7 +350,12 @@ async function getFollowedUsersPosts ({ userId, offset, limit }: GetFollowedUser
 
         const aggregateData = await Post.aggregate([
             {
-                $match: { userId: { $in: followedUsersIds }},
+                $match: {
+                    $or: [
+                        { userId: { $in: followedUsersIds } },
+                        { userId }
+                    ]
+                },
             },
             {
                 $addFields: { postId: { $toString: '$_id' }}
