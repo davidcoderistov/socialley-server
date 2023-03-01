@@ -35,8 +35,17 @@ const CreateCommentInput = new GraphQLInputObjectType({
 const postsMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     createPost: {
         type: Post,
-        args: { post: { type: CreatePostInput }},
-        resolve: (_, { post }, { userId }) => postsRepository.createPost({...post, userId})
+        args: { post: { type: new GraphQLNonNull(CreatePostInput) }},
+        resolve: async (_, { post }, { userId }) => {
+            const createdPost = await postsRepository.createPost({...post, userId})
+            return {
+                ...createdPost,
+                firstLikeUser: null,
+                liked: false,
+                favorite: false,
+                likesCount: 0,
+            }
+        }
     },
     createComment: {
         type: Comment,
