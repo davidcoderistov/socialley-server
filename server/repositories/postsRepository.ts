@@ -6,7 +6,7 @@ import CommentLike, { CommentLikeType } from '../models/CommentLike'
 import Follow from '../models/Follow'
 import User, { UserType } from '../models/User'
 import { FileUpload } from 'graphql-upload-ts'
-import { Error, Document } from 'mongoose'
+import { Error, Document, Types } from 'mongoose'
 import { getValidationError, getCustomValidationError } from '../utils'
 import fileRepository from './fileRepository'
 
@@ -753,6 +753,25 @@ async function getPostsForUser ({ userId }: { userId: string }): Promise<PostTyp
     }
 }
 
+async function getLikedPostsForUser ({ userId }: { userId: string }): Promise<PostType[]> {
+    try {
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const likedPosts = await PostLike.find({ userId }).select('postId')
+        const likedPostsObjectIds = likedPosts.map(likedPost => new Types.ObjectId(likedPost.postId))
+
+        return Post.find({ _id: { $in: likedPostsObjectIds }})
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     createPost,
     createComment,
@@ -768,4 +787,5 @@ export default {
     unmarkUserPostAsFavorite,
     getFirstLikingUserForPost,
     getPostsForUser,
+    getLikedPostsForUser,
 }
