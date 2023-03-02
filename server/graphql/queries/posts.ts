@@ -158,6 +158,10 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     getPostsForUser: {
         type: new GraphQLNonNull(new GraphQLList(Post) ),
         resolve: (_,__,{ userId }) => postsRepository.getPostsForUser({ userId })
+    },
+    getLikedPostsForUser: {
+        type: new GraphQLNonNull(new GraphQLList(Post) ),
+        resolve: (_,__,{ userId }) => postsRepository.getLikedPostsForUser({ userId })
     }
 }
 
