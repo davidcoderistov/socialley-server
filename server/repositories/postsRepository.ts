@@ -737,6 +737,22 @@ async function getFirstLikingUserForPost ({ postId }: { postId : string }): Prom
     }
 }
 
+async function getPostsForUser ({ userId }: { userId: string }): Promise<PostType[]> {
+    try {
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        return Post.find({ userId })
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     createPost,
     createComment,
@@ -751,4 +767,5 @@ export default {
     markUserPostAsFavorite,
     unmarkUserPostAsFavorite,
     getFirstLikingUserForPost,
+    getPostsForUser,
 }
