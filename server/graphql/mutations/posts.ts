@@ -7,7 +7,7 @@ import {
 } from 'graphql'
 import { GraphQLUpload } from 'graphql-upload-ts'
 import { Context } from '../../types'
-import Post from '../models/Post'
+import PostDetails from '../models/PostDetails'
 import Comment from '../models/Comment'
 import PostLike from '../models/PostLike'
 import UserFavorite from '../models/UserFavorite'
@@ -34,12 +34,19 @@ const CreateCommentInput = new GraphQLInputObjectType({
 
 const postsMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     createPost: {
-        type: Post,
+        type: PostDetails,
         args: { post: { type: new GraphQLNonNull(CreatePostInput) }},
         resolve: async (_, { post }, { userId }) => {
             const createdPost = await postsRepository.createPost({...post, userId})
             return {
                 ...createdPost,
+                post: {
+                    _id: createdPost._id,
+                    title: createdPost.title,
+                    photoURL: createdPost.photoURL,
+                    videoURL: createdPost.videoURL,
+                    createdAt: createdPost.createdAt,
+                },
                 firstLikeUser: null,
                 liked: false,
                 favorite: false,
