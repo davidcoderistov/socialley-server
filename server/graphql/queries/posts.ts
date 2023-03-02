@@ -10,7 +10,7 @@ import {
 import User from '../models/User'
 import FollowableUser from '../models/FollowableUser'
 import Comment from '../models/Comment'
-import Post from '../models/Post'
+import PostDetails from '../models/PostDetails'
 import { Context } from '../../types'
 import postsRepository from '../../repositories/postsRepository'
 
@@ -26,7 +26,7 @@ const CommentsForPostOutput = new GraphQLObjectType({
 const FollowedUserPost = new GraphQLObjectType({
     name: 'FollowedUserPost',
     fields: () => ({
-        post: { type: new GraphQLNonNull(Post) },
+        postDetails: { type: new GraphQLNonNull(PostDetails) },
         commentsCount: { type: new GraphQLNonNull(GraphQLInt) },
     })
 })
@@ -90,8 +90,21 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             return {
                 ...followedUsersPosts,
                 data: followedUsersPosts.data.map(followedUserPost => ({
-                    ...followedUserPost,
-                    post: followedUserPost,
+                    postDetails: {
+                        post: {
+                            _id: followedUserPost._id,
+                            title: followedUserPost.title,
+                            photoURL: followedUserPost.photoURL,
+                            videoURL: followedUserPost.videoURL,
+                            createdAt: followedUserPost.createdAt,
+                        },
+                        user: followedUserPost.user,
+                        firstLikeUser: followedUserPost.firstLikeUser,
+                        liked: followedUserPost.liked,
+                        favorite: followedUserPost.favorite,
+                        likesCount: followedUserPost.likesCount,
+                    },
+                    commentsCount: followedUserPost.commentsCount,
                 }))
             }
         }
