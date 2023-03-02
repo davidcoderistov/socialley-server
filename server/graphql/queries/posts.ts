@@ -10,6 +10,7 @@ import {
 import User from '../models/User'
 import FollowableUser from '../models/FollowableUser'
 import Comment from '../models/Comment'
+import Post from '../models/Post'
 import PostDetails from '../models/PostDetails'
 import { Context } from '../../types'
 import postsRepository from '../../repositories/postsRepository'
@@ -153,6 +154,10 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         type: User,
         args: { postId: { type: new GraphQLNonNull(GraphQLString) }},
         resolve: (_, { postId }) => postsRepository.getFirstLikingUserForPost({ postId })
+    },
+    getPostsForUser: {
+        type: new GraphQLNonNull(new GraphQLList(Post) ),
+        resolve: (_,__,{ userId }) => postsRepository.getPostsForUser({ userId })
     }
 }
 
