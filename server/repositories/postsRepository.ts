@@ -772,6 +772,25 @@ async function getLikedPostsForUser ({ userId }: { userId: string }): Promise<Po
     }
 }
 
+async function getFavoritePostsForUser ({ userId }: { userId: string }): Promise<PostType[]> {
+    try {
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const likedPosts = await UserFavorite.find({ userId }).select('postId')
+        const likedPostsObjectIds = likedPosts.map(likedPost => new Types.ObjectId(likedPost.postId))
+
+        return Post.find({ _id: { $in: likedPostsObjectIds }})
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     createPost,
     createComment,
@@ -788,4 +807,5 @@ export default {
     getFirstLikingUserForPost,
     getPostsForUser,
     getLikedPostsForUser,
+    getFavoritePostsForUser,
 }
