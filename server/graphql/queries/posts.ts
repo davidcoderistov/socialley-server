@@ -166,6 +166,27 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     getFavoritePostsForUser: {
         type: new GraphQLNonNull(new GraphQLList(Post) ),
         resolve: (_,__,{ userId }) => postsRepository.getFavoritePostsForUser({ userId })
+    },
+    getPostDetails: {
+        type: new GraphQLNonNull(PostDetails),
+        args: { postId: { type: new GraphQLNonNull(GraphQLString) }},
+        resolve: async (_, {postId}, {userId}) => {
+            const postDetails = await postsRepository.getPostDetails({ postId, userId })
+            return {
+                post: {
+                    _id: postDetails._id,
+                    title: postDetails.title,
+                    photoURL: postDetails.photoURL,
+                    videoURL: postDetails.videoURL,
+                    createdAt: postDetails.createdAt,
+                },
+                user: postDetails.user,
+                firstLikeUser: postDetails.firstLikeUser,
+                liked: postDetails.liked,
+                favorite: postDetails.favorite,
+                likesCount: postDetails.likesCount,
+            }
+        }
     }
 }
 
