@@ -52,6 +52,18 @@ const FollowerUsersOutput = new GraphQLObjectType({
     })
 })
 
+const UserDetails = new GraphQLObjectType({
+    name: 'UserDetails',
+    fields: () => ({
+        followableUser: { type: new GraphQLNonNull(FollowableUser) },
+        postsCount: { type: new GraphQLNonNull(GraphQLInt) },
+        followingCount: { type: new GraphQLNonNull(GraphQLInt) },
+        followersCount: { type: new GraphQLNonNull(GraphQLInt) },
+        latestFollower: { type: User },
+        followedCount: { type: new GraphQLNonNull(GraphQLInt) }
+    })
+})
+
 const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     getUsersBySearchQuery: {
         type: new GraphQLNonNull(new GraphQLList(User)),
@@ -114,6 +126,26 @@ const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
                     }
                 })),
                 total: followers.total
+            }
+        }
+    },
+    getUserDetails: {
+        type: UserDetails,
+        args: { userId: { type: new GraphQLNonNull(GraphQLString) } },
+        resolve: async (_, { userId }, { userId: loggedInUserId }) => {
+            const userDetails = await userRepository.getUserDetails({ userId, loggedInUserId })
+            return {
+                followableUser: {
+                    user: {
+                        ...userDetails
+                    },
+                    following: userDetails.following
+                },
+                postsCount: userDetails.postsCount,
+                followingCount: userDetails.followingCount,
+                followersCount: userDetails.followersCount,
+                latestFollower: userDetails.latestMutualFollower,
+                followedCount: userDetails.mutualFollowersCount,
             }
         }
     }
