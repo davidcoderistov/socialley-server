@@ -737,13 +737,48 @@ async function getFirstLikingUserForPost ({ postId }: { postId : string }): Prom
     }
 }
 
-async function getPostsForUser ({ userId }: { userId: string }): Promise<PostType[]> {
+interface GetPostsForUserOptions {
+    userId: string
+    offset: number
+    limit: number
+}
+
+interface GetPostsForUserReturnValue {
+    data: PostType[]
+    total: number
+}
+
+async function getPostsForUser ({ userId, offset, limit }: GetPostsForUserOptions): Promise<GetPostsForUserReturnValue> {
     try {
         if (!await User.findById(userId)) {
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
         }
 
-        return Post.find({ userId })
+        const posts = await Post.aggregate([
+            {
+                $match: { userId }
+            },
+            {
+                $facet: {
+                    metadata: [{
+                        $count: 'count'
+                    }],
+                    data: [
+                        {
+                            $skip: offset,
+                        },
+                        {
+                            $limit: limit,
+                        },
+                    ]
+                }
+            }
+        ])
+
+        return {
+            data: posts[0].data,
+            total: posts[0].metadata[0].count
+        }
     } catch (err) {
         if (err instanceof Error.ValidationError) {
             throw getValidationError(err)
@@ -753,7 +788,18 @@ async function getPostsForUser ({ userId }: { userId: string }): Promise<PostTyp
     }
 }
 
-async function getLikedPostsForUser ({ userId }: { userId: string }): Promise<PostType[]> {
+interface GetLikedPostsForUserOptions {
+    userId: string
+    offset: number
+    limit: number
+}
+
+interface GetLikedPostsForUserReturnValue {
+    data: PostType[]
+    total: number
+}
+
+async function getLikedPostsForUser ({ userId, offset, limit }: GetLikedPostsForUserOptions): Promise<GetLikedPostsForUserReturnValue> {
     try {
         if (!await User.findById(userId)) {
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
@@ -762,7 +808,31 @@ async function getLikedPostsForUser ({ userId }: { userId: string }): Promise<Po
         const likedPosts = await PostLike.find({ userId }).select('postId')
         const likedPostsObjectIds = likedPosts.map(likedPost => new Types.ObjectId(likedPost.postId))
 
-        return Post.find({ _id: { $in: likedPostsObjectIds }})
+        const posts = await Post.aggregate([
+            {
+                $match: { _id: { $in: likedPostsObjectIds }}
+            },
+            {
+                $facet: {
+                    metadata: [{
+                        $count: 'count'
+                    }],
+                    data: [
+                        {
+                            $skip: offset,
+                        },
+                        {
+                            $limit: limit,
+                        },
+                    ]
+                }
+            }
+        ])
+
+        return {
+            data: posts[0].data,
+            total: posts[0].metadata[0].count
+        }
     } catch (err) {
         if (err instanceof Error.ValidationError) {
             throw getValidationError(err)
@@ -772,16 +842,51 @@ async function getLikedPostsForUser ({ userId }: { userId: string }): Promise<Po
     }
 }
 
-async function getFavoritePostsForUser ({ userId }: { userId: string }): Promise<PostType[]> {
+interface GetFavoritePostsForUserOptions {
+    userId: string
+    offset: number
+    limit: number
+}
+
+interface GetFavoritePostsForUserReturnValue {
+    data: PostType[]
+    total: number
+}
+
+async function getFavoritePostsForUser ({ userId, offset, limit }: GetFavoritePostsForUserOptions): Promise<GetFavoritePostsForUserReturnValue> {
     try {
         if (!await User.findById(userId)) {
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
         }
 
-        const likedPosts = await UserFavorite.find({ userId }).select('postId')
-        const likedPostsObjectIds = likedPosts.map(likedPost => new Types.ObjectId(likedPost.postId))
+        const favoritePosts = await UserFavorite.find({ userId }).select('postId')
+        const favoritePostsObjectIds = favoritePosts.map(favoritePost => new Types.ObjectId(favoritePost.postId))
 
-        return Post.find({ _id: { $in: likedPostsObjectIds }})
+        const posts = await Post.aggregate([
+            {
+                $match: { _id: { $in: favoritePostsObjectIds }}
+            },
+            {
+                $facet: {
+                    metadata: [{
+                        $count: 'count'
+                    }],
+                    data: [
+                        {
+                            $skip: offset,
+                        },
+                        {
+                            $limit: limit,
+                        },
+                    ]
+                }
+            }
+        ])
+
+        return {
+            data: posts[0].data,
+            total: posts[0].metadata[0].count
+        }
     } catch (err) {
         if (err instanceof Error.ValidationError) {
             throw getValidationError(err)
