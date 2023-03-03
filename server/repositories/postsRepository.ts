@@ -791,6 +791,132 @@ async function getFavoritePostsForUser ({ userId }: { userId: string }): Promise
     }
 }
 
+interface PostDetails extends PostType {
+    likesCount: number
+    liked: boolean
+    favorite: boolean
+    user: UserType
+    firstLikeUser: UserType | null
+}
+
+async function getPostDetails ({ postId, userId }: { postId: string, userId: string }): Promise<PostDetails> {
+    try {
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const posts = await Post.aggregate([
+            {
+                $addFields: { postId: { $toString: '$_id' }}
+            },
+            {
+                $match: { postId }
+            },
+            {
+                $lookup: {
+                    from: PostLike.collection.name,
+                    localField: 'postId',
+                    foreignField: 'postId',
+                    as: 'postLikes'
+                }
+            },
+            {
+                $addFields: {
+                    liked: {
+                        $in: [userId, '$postLikes.userId']
+                    }
+                }
+            },
+            {
+                $lookup: {
+                    from: UserFavorite.collection.name,
+                    localField: 'postId',
+                    foreignField: 'postId',
+                    as: 'userFavorites'
+                }
+            },
+            {
+                $addFields: {
+                    favorite: {
+                        $in: [userId, '$userFavorites.userId']
+                    }
+                }
+            },
+            {
+                $unwind: {
+                    path: '$postLikes',
+                    preserveNullAndEmptyArrays: true,
+                }
+            },
+            {
+                $sort: { 'postLikes.createdAt': -1 }
+            },
+            {
+                $group: {
+                    _id: '$postId',
+                    postId: { $first: '$postId' },
+                    title: { $first: '$title' },
+                    photoURL: { $first: '$photoURL' },
+                    videoURL: { $first: '$videoURL' },
+                    userId: { $first: '$userId' },
+                    createdAt: { $first: '$createdAt' },
+                    liked: { $first: '$liked' },
+                    favorite: { $first: '$favorite' },
+                    likesCount: {
+                        $sum: {
+                            $cond: [{ $ifNull: ['$postLikes', false] }, 1, 0]
+                        }
+                    },
+                    firstLikeUserId: { $first: '$postLikes.userId' }
+                }
+            },
+            {
+                $addFields: {
+                    userObjectId: { $toObjectId: '$userId' },
+                    firstLikeUserObjectId: { $toObjectId: '$firstLikeUserId' },
+                }
+            },
+            {
+                $lookup: {
+                    from: User.collection.name,
+                    localField: 'userObjectId',
+                    foreignField: '_id',
+                    as: 'users'
+                }
+            },
+            {
+                $lookup: {
+                    from: User.collection.name,
+                    localField: 'firstLikeUserObjectId',
+                    foreignField: '_id',
+                    as: 'firstLikeUsers'
+                }
+            },
+            {
+                $addFields: {
+                    user: { $arrayElemAt: [ '$users', 0 ] },
+                    firstLikeUser: {
+                        $ifNull: [ { $arrayElemAt: [ '$firstLikeUsers', 0 ] }, null ]
+                    }
+                }
+            }
+        ])
+
+        if (posts.length > 0) {
+            return posts[0]
+        } else {
+            return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
+        }
+
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     createPost,
     createComment,
@@ -808,4 +934,5 @@ export default {
     getPostsForUser,
     getLikedPostsForUser,
     getFavoritePostsForUser,
+    getPostDetails,
 }
