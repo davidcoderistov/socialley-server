@@ -1,5 +1,6 @@
 import User, { UserType } from '../models/User'
 import Follow, { FollowType } from '../models/Follow'
+import Post from '../models/Post'
 import PostLike from '../models/PostLike'
 import Comment from '../models/Comment'
 import bcrypt from 'bcrypt'
@@ -652,6 +653,78 @@ async function getFollowersForUser ({ userId, loggedInUserId, offset, limit }: G
     }
 }
 
+interface GetUserDetailsOptions {
+    userId: string
+    loggedInUserId: string
+}
+
+interface UserDetails extends UserType {
+    postsCount: number
+    followingCount: number
+    followersCount: number
+    following: boolean
+    mutualFollowersCount: number
+    latestMutualFollower: UserType | null
+}
+
+async function getUserDetails ({ userId, loggedInUserId }: GetUserDetailsOptions): Promise<UserDetails> {
+    try {
+        const user = await User.findById(userId)
+
+        if (!user) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        if (!await User.findById(loggedInUserId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${loggedInUserId} does not exist`))
+        }
+
+        const postsCount = await Post.countDocuments({ userId })
+        const followingCount = await Follow.countDocuments({ followingUserId: userId })
+        const followersCount = await Follow.countDocuments({ followedUserId: userId })
+
+        let following = false
+        let mutualFollowersCount = 0
+        let latestMutualFollower = null
+
+        if (userId !== loggedInUserId) {
+            const findFollowing = await Follow.find({ followingUserId: loggedInUserId, followedUserId: userId })
+            following = findFollowing.length > 0
+
+            const userFollows = await Follow.find({ followingUserId: loggedInUserId }).select('followedUserId')
+            const followedUsersIds = userFollows.map(follow => follow.followedUserId)
+
+            const mutualFollowers = await Follow.find({
+                $and: [
+                    { followedUserId: userId },
+                    { followingUserId: { $in: followedUsersIds }}
+                ]
+            }).sort({ createdAt: -1 })
+
+            mutualFollowersCount = mutualFollowers.length
+            if (mutualFollowersCount > 0) {
+                latestMutualFollower = await User.findById(mutualFollowers[0].followingUserId)
+            }
+        }
+
+        return {
+            ...user.toObject(),
+            postsCount,
+            followingCount,
+            followersCount,
+            following,
+            mutualFollowersCount,
+            latestMutualFollower,
+        }
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     signUp,
     login,
@@ -663,4 +736,5 @@ export default {
     getSuggestedUsers,
     getFollowingForUser,
     getFollowersForUser,
+    getUserDetails,
 }
