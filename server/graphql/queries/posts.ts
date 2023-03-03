@@ -70,6 +70,30 @@ const UsersWhoLikedCommentOutput = new GraphQLObjectType({
     })
 })
 
+const PostsForUserOutput = new GraphQLObjectType({
+    name: 'PostsForUserOutput',
+    fields: () => ({
+        data: { type: new GraphQLNonNull(new GraphQLList(Post)) },
+        total: { type: new GraphQLNonNull(GraphQLInt) },
+    })
+})
+
+const LikedPostsForUserOutput = new GraphQLObjectType({
+    name: 'LikedPostsForUserOutput',
+    fields: () => ({
+        data: { type: new GraphQLNonNull(new GraphQLList(Post)) },
+        total: { type: new GraphQLNonNull(GraphQLInt) },
+    })
+})
+
+const FavoritePostsForUserOutput = new GraphQLObjectType({
+    name: 'FavoritePostsForUserOutput',
+    fields: () => ({
+        data: { type: new GraphQLNonNull(new GraphQLList(Post)) },
+        total: { type: new GraphQLNonNull(GraphQLInt) },
+    })
+})
+
 const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     getCommentsForPost: {
         type: CommentsForPostOutput,
@@ -156,16 +180,28 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         resolve: (_, { postId }) => postsRepository.getFirstLikingUserForPost({ postId })
     },
     getPostsForUser: {
-        type: new GraphQLNonNull(new GraphQLList(Post) ),
-        resolve: (_,__,{ userId }) => postsRepository.getPostsForUser({ userId })
+        type: PostsForUserOutput,
+        args: {
+            offset: { type: new GraphQLNonNull(GraphQLInt) },
+            limit: { type: new GraphQLNonNull(GraphQLInt) },
+        },
+        resolve: (_,{ offset, limit },{ userId }) => postsRepository.getPostsForUser({ userId, offset, limit })
     },
     getLikedPostsForUser: {
-        type: new GraphQLNonNull(new GraphQLList(Post) ),
-        resolve: (_,__,{ userId }) => postsRepository.getLikedPostsForUser({ userId })
+        type: LikedPostsForUserOutput,
+        args: {
+            offset: { type: new GraphQLNonNull(GraphQLInt) },
+            limit: { type: new GraphQLNonNull(GraphQLInt) },
+        },
+        resolve: (_,{ offset, limit },{ userId }) => postsRepository.getLikedPostsForUser({ userId, offset, limit })
     },
     getFavoritePostsForUser: {
-        type: new GraphQLNonNull(new GraphQLList(Post) ),
-        resolve: (_,__,{ userId }) => postsRepository.getFavoritePostsForUser({ userId })
+        type: FavoritePostsForUserOutput,
+        args: {
+            offset: { type: new GraphQLNonNull(GraphQLInt) },
+            limit: { type: new GraphQLNonNull(GraphQLInt) },
+        },
+        resolve: (_,{ offset, limit },{ userId }) => postsRepository.getFavoritePostsForUser({ userId, offset, limit  })
     },
     getPostDetails: {
         type: new GraphQLNonNull(PostDetails),
