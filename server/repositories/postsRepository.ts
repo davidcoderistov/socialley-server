@@ -759,6 +759,9 @@ async function getPostsForUser ({ userId, offset, limit }: GetPostsForUserOption
                 $match: { userId }
             },
             {
+                $sort: { createdAt: -1 }
+            },
+            {
                 $facet: {
                     metadata: [{
                         $count: 'count'
