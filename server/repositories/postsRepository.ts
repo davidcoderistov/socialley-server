@@ -805,12 +805,22 @@ async function getLikedPostsForUser ({ userId, offset, limit }: GetLikedPostsFor
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
         }
 
-        const likedPosts = await PostLike.find({ userId }).select('postId')
+        const likedPosts = await PostLike.find({ userId }).sort({ createdAt: -1 }).select('postId')
         const likedPostsObjectIds = likedPosts.map(likedPost => new Types.ObjectId(likedPost.postId))
 
         const posts = await Post.aggregate([
             {
                 $match: { _id: { $in: likedPostsObjectIds }}
+            },
+            {
+                $addFields: {
+                    order: {
+                        $indexOfArray: [ likedPostsObjectIds, '$_id' ]
+                    }
+                }
+            },
+            {
+                $sort: { order: 1 }
             },
             {
                 $facet: {
@@ -859,12 +869,22 @@ async function getFavoritePostsForUser ({ userId, offset, limit }: GetFavoritePo
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
         }
 
-        const favoritePosts = await UserFavorite.find({ userId }).select('postId')
+        const favoritePosts = await UserFavorite.find({ userId }).sort({ createdAt: -1 }).select('postId')
         const favoritePostsObjectIds = favoritePosts.map(favoritePost => new Types.ObjectId(favoritePost.postId))
 
         const posts = await Post.aggregate([
             {
                 $match: { _id: { $in: favoritePostsObjectIds }}
+            },
+            {
+                $addFields: {
+                    order: {
+                        $indexOfArray: [ favoritePostsObjectIds, '$_id' ]
+                    }
+                }
+            },
+            {
+                $sort: { order: 1 }
             },
             {
                 $facet: {
