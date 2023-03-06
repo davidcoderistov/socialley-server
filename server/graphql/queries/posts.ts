@@ -14,6 +14,7 @@ import Post from '../models/Post'
 import PostDetails from '../models/PostDetails'
 import { Context } from '../../types'
 import postsRepository from '../../repositories/postsRepository'
+import followedUsersPostsLoader from '../../loaders/followedUsersPostsLoader'
 
 
 const CommentsForPostOutput = new GraphQLObjectType({
@@ -111,10 +112,13 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             limit: { type: new GraphQLNonNull(GraphQLInt) },
         },
         resolve: async (_, { offset, limit }, { userId }) => {
-            const followedUsersPosts = await postsRepository.getFollowedUsersPosts({ userId, offset, limit })
+            if (offset === 0) {
+                followedUsersPostsLoader.clear(userId)
+            }
+            const followedUsersPosts = await followedUsersPostsLoader.load(userId)
             return {
-                ...followedUsersPosts,
-                data: followedUsersPosts.data.map(followedUserPost => ({
+                total: followedUsersPosts.length,
+                data: followedUsersPosts.slice(offset, offset + limit).map(followedUserPost => ({
                     postDetails: {
                         post: {
                             _id: followedUserPost._id,
