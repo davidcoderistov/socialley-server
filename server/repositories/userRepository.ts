@@ -725,6 +725,70 @@ async function getUserDetails ({ userId, loggedInUserId }: GetUserDetailsOptions
     }
 }
 
+interface GetSearchedUsersOptions {
+    searchQuery: string
+    userId: string
+}
+
+interface SearchedUser extends UserType {
+    following: boolean
+}
+
+async function getSearchedUsers ({ searchQuery, userId }: GetSearchedUsersOptions): Promise<SearchedUser[]> {
+    try {
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const userFollows = await Follow.find({ followingUserId: userId }).select('followedUserId')
+        const followedUsersIds = userFollows.map(follow => follow.followedUserId)
+
+        const regex = new RegExp(searchQuery, 'i')
+        return User.aggregate([
+            {
+                $addFields: {
+                    userId: {
+                        $toString: '$_id'
+                    }
+                }
+            },
+            {
+                $match: {
+                    $and: [
+                        { userId: { $ne: userId }},
+                        {
+                            $or: [
+                                { firstName: { $regex: regex } },
+                                { lastName: { $regex: regex } },
+                                { username: { $regex: regex } }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                $sort: { username: 1 }
+            },
+            {
+                $limit: 15
+            },
+            {
+                $addFields: {
+                    following: {
+                        $in: ['$userId', followedUsersIds]
+                    }
+                }
+            }
+        ])
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     signUp,
     login,
@@ -737,4 +801,5 @@ export default {
     getFollowingForUser,
     getFollowersForUser,
     getUserDetails,
+    getSearchedUsers,
 }
