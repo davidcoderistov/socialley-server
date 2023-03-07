@@ -64,6 +64,13 @@ const UserDetails = new GraphQLObjectType({
     })
 })
 
+const SearchedUser = new GraphQLObjectType({
+    name: 'SearchedUser',
+    fields: () => ({
+        followableUser: { type: new GraphQLNonNull(FollowableUser) },
+    })
+})
+
 const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     getUsersBySearchQuery: {
         type: new GraphQLNonNull(new GraphQLList(User)),
@@ -147,6 +154,19 @@ const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
                 latestFollower: userDetails.latestMutualFollower,
                 followedCount: userDetails.mutualFollowersCount,
             }
+        }
+    },
+    getSearchedUsers: {
+        type: new GraphQLList(SearchedUser),
+        args: { searchQuery: { type: new GraphQLNonNull(GraphQLString) } },
+        resolve: async (_, { searchQuery }, { userId }) => {
+            const searchedUsers = await userRepository.getSearchedUsers({ searchQuery, userId })
+            return searchedUsers.map(searchedUser => ({
+                followableUser: {
+                    user: searchedUser,
+                    following: searchedUser.following,
+                }
+            }))
         }
     }
 }
