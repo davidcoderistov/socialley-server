@@ -418,7 +418,7 @@ async function getSuggestedUsers ({ userId }: GetSuggestedUsersOptions): Promise
                 }
             },
             {
-                $limit: 10
+                $limit: 15
             },
             {
                 $addFields: {
