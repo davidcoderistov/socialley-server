@@ -11,6 +11,7 @@ import User from '../models/User'
 import FollowableUser from '../models/FollowableUser'
 import { Context } from '../../types'
 import userRepository from '../../repositories/userRepository'
+import suggestedUsersLoader from '../../loaders/suggestedUsersLoader'
 
 
 const SuggestedUser = new GraphQLObjectType({
@@ -19,6 +20,14 @@ const SuggestedUser = new GraphQLObjectType({
         followableUser: { type: new GraphQLNonNull(FollowableUser) },
         latestFollower: { type: User },
         followedCount: { type: new GraphQLNonNull(GraphQLInt) }
+    })
+})
+
+const SuggestedUsersOutput = new GraphQLObjectType({
+    name: 'SuggestedUsersOutput',
+    fields: () => ({
+        data: { type: new GraphQLNonNull(new GraphQLList(SuggestedUser)) },
+        total: { type: new GraphQLNonNull(GraphQLInt) },
     })
 })
 
@@ -83,17 +92,27 @@ const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         }
     },
     getSuggestedUsers: {
-        type: new GraphQLNonNull(new GraphQLList(SuggestedUser)),
-        resolve: async (_, __, { userId }) => {
-            const suggestedUsers = await userRepository.getSuggestedUsers({ userId })
-            return suggestedUsers.map(suggestedUser => ({
-                followableUser: {
-                    user: { ...suggestedUser },
-                    following: false,
-                },
-                latestFollower: suggestedUser.latestFollower,
-                followedCount: suggestedUser.followedCount,
-            }))
+        type: SuggestedUsersOutput,
+        args: {
+            offset: { type: new GraphQLNonNull(GraphQLInt) },
+            limit: { type: new GraphQLNonNull(GraphQLInt) },
+        },
+        resolve: async (_, { offset, limit }, { userId }) => {
+            if (offset === 0) {
+                suggestedUsersLoader.clear(userId)
+            }
+            const suggestedUsers = await suggestedUsersLoader.load(userId)
+            return {
+                data: suggestedUsers.map(suggestedUser => ({
+                    followableUser: {
+                        user: { ...suggestedUser },
+                        following: false,
+                    },
+                    latestFollower: suggestedUser.latestFollower,
+                    followedCount: suggestedUser.followedCount,
+                })).slice(offset, offset + limit),
+                total: suggestedUsers.length,
+            }
         }
     },
     getFollowingForUser: {
