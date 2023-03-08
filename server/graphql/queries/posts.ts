@@ -186,10 +186,11 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     getPostsForUser: {
         type: PostsForUserOutput,
         args: {
+            userId: { type: new GraphQLNonNull(GraphQLString) },
             offset: { type: new GraphQLNonNull(GraphQLInt) },
             limit: { type: new GraphQLNonNull(GraphQLInt) },
         },
-        resolve: (_,{ offset, limit },{ userId }) => postsRepository.getPostsForUser({ userId, offset, limit })
+        resolve: (_,{ userId, offset, limit }) => postsRepository.getPostsForUser({ userId, offset, limit })
     },
     getLikedPostsForUser: {
         type: LikedPostsForUserOutput,
