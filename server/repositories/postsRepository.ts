@@ -306,7 +306,7 @@ async function getCommentsForPost ({ postId, userId, offset, limit }: GetComment
     }>
 
     return {
-        total: aggregateData[0].metadata[0].count,
+        total: aggregateData[0].metadata.length > 0 ? aggregateData[0].metadata[0].count : 0,
         data: commentsWithLikes.map(comment => ({
             _id: comment._id,
             text: comment.text,
@@ -481,7 +481,7 @@ async function getFollowedUsersPosts ({ userId, offset, limit }: GetFollowedUser
         ])
 
         return {
-            total: aggregateData[0].metadata[0].count,
+            total: aggregateData[0].metadata.length > 0 ? aggregateData[0].metadata[0].count : 0,
             data: aggregateData[0].data.map(post => ({
                 ...post,
                 user: post.users[0],
@@ -702,7 +702,7 @@ async function getUsersWhoLikedPost ({ postId, userId, offset, limit }: GetUsers
         }), {})
 
         return {
-            total: paginatedUsersData[0].metadata[0].count,
+            total: paginatedUsersData[0].metadata.length > 0 ? paginatedUsersData[0].metadata[0].count : 0,
             data: users.map(user => ({
                 ...user.userId.toObject(),
                 following: followedUsersIdsMap.hasOwnProperty(user.userId._id.toString())
@@ -778,7 +778,7 @@ async function getUsersWhoLikedComment ({ commentId, userId, offset, limit }: Ge
         }), {})
 
         return {
-            total: paginatedUsersData[0].metadata[0].count,
+            total: paginatedUsersData[0].metadata.length > 0 ? paginatedUsersData[0].metadata[0].count : 0,
             data: users.map(user => ({
                 ...user.userId.toObject(),
                 following: followedUsersIdsMap.hasOwnProperty(user.userId._id.toString())
@@ -920,7 +920,7 @@ async function getPostsForUser ({ userId, offset, limit }: GetPostsForUserOption
 
         return {
             data: posts[0].data,
-            total: posts[0].metadata[0].count
+            total: posts[0].metadata.length > 0 ? posts[0].metadata[0].count : 0
         }
     } catch (err) {
         if (err instanceof Error.ValidationError) {
@@ -984,7 +984,7 @@ async function getLikedPostsForUser ({ userId, offset, limit }: GetLikedPostsFor
 
         return {
             data: posts[0].data,
-            total: posts[0].metadata[0].count
+            total: posts[0].metadata.length > 0 ? posts[0].metadata[0].count : 0
         }
     } catch (err) {
         if (err instanceof Error.ValidationError) {
@@ -1048,7 +1048,7 @@ async function getFavoritePostsForUser ({ userId, offset, limit }: GetFavoritePo
 
         return {
             data: posts[0].data,
-            total: posts[0].metadata[0].count
+            total: posts[0].metadata.length > 0 ? posts[0].metadata[0].count : 0,
         }
     } catch (err) {
         if (err instanceof Error.ValidationError) {

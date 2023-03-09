@@ -213,7 +213,7 @@ async function getLatestMessages ({ userId, offset, limit }: { userId: string, o
     }>
 
     return {
-        total: aggregateData[0].metadata[0].count,
+        total: aggregateData[0].metadata.length > 0 ? aggregateData[0].metadata[0].count : 0,
         data: messages.map(message => ({
             _id: message.messageId,
             fromUser: message.fromUserId,
@@ -358,7 +358,7 @@ async function getLatestChatMessages ({ users, offset, limit }: { users: [string
     ])
 
     return {
-        total: aggregateData[0].metadata[0].count,
+        total: aggregateData[0].metadata.length > 0 ? aggregateData[0].metadata[0].count : 0,
         data: aggregateData[0].data,
     }
 }

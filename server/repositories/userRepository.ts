@@ -544,7 +544,7 @@ async function getFollowingForUser ({ userId, loggedInUserId, offset, limit }: G
 
         return {
             data: followingAggregateData[0].data,
-            total: followingAggregateData[0].metadata[0].count,
+            total: followingAggregateData[0].metadata.length > 0 ? followingAggregateData[0].metadata[0].count : 0,
         }
     } catch (err) {
         if (err instanceof Error.ValidationError) {
@@ -642,7 +642,7 @@ async function getFollowersForUser ({ userId, loggedInUserId, offset, limit }: G
 
         return {
             data: followersAggregateData[0].data,
-            total: followersAggregateData[0].metadata[0].count,
+            total: followersAggregateData[0].metadata.length > 0 ? followersAggregateData[0].metadata[0].count : 0,
         }
     } catch (err) {
         if (err instanceof Error.ValidationError) {
