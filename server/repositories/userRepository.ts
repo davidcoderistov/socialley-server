@@ -693,7 +693,6 @@ async function getUserDetails ({ userId, loggedInUserId }: GetUserDetailsOptions
 
             const userFollows = await Follow.find({ followingUserId: loggedInUserId }).select('followedUserId')
             const followedUsersIds = userFollows.map(follow => follow.followedUserId)
-            followedUsersIds.push(loggedInUserId)
 
             const mutualFollowers = await Follow.find({
                 $and: [
