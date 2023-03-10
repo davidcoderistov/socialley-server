@@ -871,6 +871,36 @@ async function clearSearchHistory ({ searchingUserId }: { searchingUserId: strin
     }
 }
 
+async function getSearchedUsersForUser ({ userId }: { userId: string }): Promise<UserType[]> {
+    try {
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const userSearches = await UserSearch
+            .find({ searchingUserId: userId })
+            .sort({ createdAt: -1 })
+            .limit(10)
+            .select('searchedUserId')
+
+        const searchUserObjectIds = userSearches.map(userSearch => new mongoose.Types.ObjectId(userSearch.searchedUserId))
+
+        const searchedUsers = await User.find({ _id: { $in: searchUserObjectIds }})
+        const searchedUsersByUser = searchedUsers.reduce((acc, searchedUser) => ({
+            ...acc,
+            [searchedUser._id.toString()]: searchedUser
+        }), {})
+
+        return searchUserObjectIds.map(searchUserObjectId => searchedUsersByUser[searchUserObjectId.toString()])
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     signUp,
     login,
@@ -887,4 +917,5 @@ export default {
     markUserAsSearched,
     markUserAsUnsearched,
     clearSearchHistory,
+    getSearchedUsersForUser,
 }
