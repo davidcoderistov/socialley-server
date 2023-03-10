@@ -805,9 +805,7 @@ async function markUserAsSearched ({ searchingUserId, searchedUserId }: MarkUser
             return Promise.reject(getCustomValidationError('searchedUserId', `User with id ${searchedUserId} does not exist`))
         }
 
-        if ((await UserSearch.find({ searchingUserId, searchedUserId })).length > 0) {
-            return Promise.reject(getCustomValidationError('followedUserId', `User ${searchingUserId} already searched ${searchedUserId}`))
-        }
+        await UserSearch.findOneAndDelete({ searchingUserId, searchedUserId })
 
         const userSearch = new UserSearch({
             searchingUserId,
