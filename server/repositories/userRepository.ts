@@ -1,5 +1,6 @@
 import User, { UserType } from '../models/User'
 import Follow, { FollowType } from '../models/Follow'
+import UserSearch, { UserSearchType } from '../models/UserSearch'
 import Post from '../models/Post'
 import PostLike from '../models/PostLike'
 import Comment from '../models/Comment'
@@ -789,6 +790,87 @@ async function getSearchedUsers ({ searchQuery, userId }: GetSearchedUsersOption
     }
 }
 
+interface MarkUserAsSearchedOptions {
+    searchingUserId: string
+    searchedUserId: string
+}
+
+async function markUserAsSearched ({ searchingUserId, searchedUserId }: MarkUserAsSearchedOptions): Promise<UserSearchType> {
+    try {
+        if (!await User.findById(searchingUserId)) {
+            return Promise.reject(getCustomValidationError('searchingUserId', `User with id ${searchingUserId} does not exist`))
+        }
+
+        if (!await User.findById(searchedUserId)) {
+            return Promise.reject(getCustomValidationError('searchedUserId', `User with id ${searchedUserId} does not exist`))
+        }
+
+        if ((await UserSearch.find({ searchingUserId, searchedUserId })).length > 0) {
+            return Promise.reject(getCustomValidationError('followedUserId', `User ${searchingUserId} already searched ${searchedUserId}`))
+        }
+
+        const userSearch = new UserSearch({
+            searchingUserId,
+            searchedUserId,
+        })
+        return await userSearch.save()
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
+interface MarkUserAsUnsearchedOptions {
+    searchingUserId: string
+    searchedUserId: string
+}
+
+async function markUserAsUnsearched ({ searchingUserId, searchedUserId }: MarkUserAsUnsearchedOptions): Promise<UserSearchType> {
+    try {
+        if (!await User.findById(searchingUserId)) {
+            return Promise.reject(getCustomValidationError('searchingUserId', `User with id ${searchingUserId} does not exist`))
+        }
+
+        if (!await User.findById(searchedUserId)) {
+            return Promise.reject(getCustomValidationError('searchedUserId', `User with id ${searchedUserId} does not exist`))
+        }
+
+        const userSearch = await UserSearch.findOneAndDelete({ searchingUserId, searchedUserId })
+
+        if (!userSearch) {
+            return Promise.reject(getCustomValidationError('searchedUserId', `User with id ${searchedUserId} is not searched`))
+        }
+
+        return userSearch
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
+async function clearSearchHistory ({ searchingUserId }: { searchingUserId: string }): Promise<number> {
+    try {
+        if (!await User.findById(searchingUserId)) {
+            return Promise.reject(getCustomValidationError('searchingUserId', `User with id ${searchingUserId} does not exist`))
+        }
+
+        const deletedUserSearches = await UserSearch.deleteMany({ searchingUserId })
+        return deletedUserSearches.deletedCount
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     signUp,
     login,
@@ -802,4 +884,7 @@ export default {
     getFollowersForUser,
     getUserDetails,
     getSearchedUsers,
+    markUserAsSearched,
+    markUserAsUnsearched,
+    clearSearchHistory,
 }
