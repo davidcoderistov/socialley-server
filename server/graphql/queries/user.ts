@@ -187,6 +187,11 @@ const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
                 }
             }))
         }
+    },
+    getSearchedUsersForUser: {
+        type: new GraphQLList(User),
+        resolve: (_, __, { userId }) =>
+            userRepository.getSearchedUsersForUser({ userId })
     }
 }
 
