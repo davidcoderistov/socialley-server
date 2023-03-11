@@ -1186,7 +1186,7 @@ async function getPostDetails ({ postId, userId }: { postId: string, userId: str
     }
 }
 
-async function getSuggestedPosts ({ userId }: { userId: string }) {
+async function getSuggestedPosts ({ userId }: { userId: string }): Promise<PostType[]> {
     try {
         if (!await User.findById(userId)) {
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
@@ -1367,7 +1367,7 @@ async function getSuggestedPosts ({ userId }: { userId: string }) {
         const suggestedPosts = await Post.find({
             _id: { $in: suggestedPostsIds.map(id => new Types.ObjectId(id)) }
         })
-        const suggestedPostsById = suggestedPosts.reduce((posts, post) => ({
+        const suggestedPostsById: { [postId: string]: PostType } = suggestedPosts.reduce((posts, post) => ({
             ...posts,
             [post._id.toString()]: post
         }), {})
