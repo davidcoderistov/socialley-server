@@ -9,6 +9,7 @@ import { FileUpload } from 'graphql-upload-ts'
 import { Error, Document, Types } from 'mongoose'
 import { getValidationError, getCustomValidationError } from '../utils'
 import fileRepository from './fileRepository'
+import _uniq from 'lodash/uniq'
 
 
 interface Post extends Document {
@@ -1328,7 +1329,10 @@ async function getSuggestedPosts ({ userId }: { userId: string }) {
         // Most recent posts by these people
         const popularPosts = await Post.aggregate([
             {
-                $match: { userId: { $in: allPopularUsersIds }}
+                $match: {
+                    _id: { $nin: followingSuggestedPostsIds.map(id => new Types.ObjectId(id)) },
+                    userId: { $in: allPopularUsersIds },
+                }
             },
             {
                 $sort: { createdAt: -1 }
@@ -1355,10 +1359,10 @@ async function getSuggestedPosts ({ userId }: { userId: string }) {
             .filter(userId => postsByUser.hasOwnProperty(userId))
             .map(userId => postsByUser[userId])
 
-        const suggestedPostsIds = [
+        const suggestedPostsIds = _uniq([
             ...followingSuggestedPostsIds,
             ...popularPostsIds,
-        ]
+        ])
 
         const suggestedPosts = await Post.find({
             _id: { $in: suggestedPostsIds.map(id => new Types.ObjectId(id)) }
