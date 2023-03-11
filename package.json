@@ -16,6 +16,7 @@
     "@rajesh896/video-thumbnails-generator": "^2.3.9",
     "@types/apollo-upload-client": "^17.0.2",
     "@types/bcrypt": "^5.0.0",
+    "@types/lodash": "^4.14.191",
     "@types/ws": "^8.5.3",
     "apollo-upload-client": "^17.0.0",
     "bcrypt": "^5.1.0",
@@ -29,6 +30,7 @@
     "graphql-upload-ts": "^2.0.5",
     "graphql-ws": "^5.11.2",
     "jsonwebtoken": "^8.5.1",
+    "lodash": "^4.17.21",
     "mongoose": "^6.7.1",
     "react-player": "^2.11.0",
     "ws": "^8.10.0"
