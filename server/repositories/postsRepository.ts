@@ -1185,6 +1185,200 @@ async function getPostDetails ({ postId, userId }: { postId: string, userId: str
     }
 }
 
+async function getSuggestedPosts ({ userId }: { userId: string }) {
+    try {
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const userFollows = await Follow.find({ followingUserId: userId }).select('followedUserId')
+        const followedUsersIds = userFollows.map(follow => follow.followedUserId)
+
+        // Posts that the user or the people he follows created
+        const followedUsersPosts = await Post.find({ userId: { $in: [userId, ...followedUsersIds]}}).select('_id')
+        const followedUsersPostsIds = followedUsersPosts.map(post => post._id.toString())
+
+        // Posts that the people user follows liked, but are not created by him or the people he follows
+        const likedPostsCount = await PostLike.aggregate([
+            {
+                $match: {
+                    userId: { $in: followedUsersIds },
+                    postId: { $nin: followedUsersPostsIds },
+                }
+            },
+            {
+                $group: {
+                    _id: '$postId',
+                    count: { $count: {} }
+                },
+            },
+            {
+                $sort: { count: -1 }
+            },
+            {
+                $limit: 50,
+            }
+        ])
+
+        // Posts that the people user follows marked as favorite, but are not created by him or the people he follows
+        const favoritePostsCount = await UserFavorite.aggregate([
+            {
+                $match: {
+                    userId: { $in: followedUsersIds },
+                    postId: { $nin: followedUsersPostsIds },
+                }
+            },
+            {
+                $group: {
+                    _id: '$postId',
+                    count: { $count: {} }
+                },
+            },
+            {
+                $sort: { count: -1 }
+            },
+            {
+                $limit: 50,
+            }
+        ])
+
+        // Posts that the people user follows commented on, but are not created by him or the people he follows
+        const commentedPostsCount = await Comment.aggregate([
+            {
+                $match: {
+                    userId: { $in: followedUsersIds },
+                    postId: { $nin: followedUsersPostsIds },
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        userId: '$userId',
+                        postId: '$postId',
+                    },
+                }
+            },
+            {
+                $group: {
+                    _id: '$_id.postId',
+                    count: { $count: {} }
+                }
+            },
+            {
+                $sort: { count: -1 }
+            },
+            {
+                $limit: 50,
+            }
+        ])
+
+        const followingSuggestedPostsWithCount = [
+            ...likedPostsCount,
+            ...favoritePostsCount,
+            ...commentedPostsCount
+        ].reduce((posts, post) => ({
+            ...posts,
+            [post._id]: (posts[post._id] ?? 0) + post.count
+        }), {})
+        const followingSuggestedPostsIds = Object.keys(followingSuggestedPostsWithCount)
+            .sort((a, b) => followingSuggestedPostsWithCount[b] - followingSuggestedPostsWithCount[a])
+
+        // People that have the most followers that the user does not follow (have at least 1 follower)
+        const popularUsersCount = await Follow.aggregate([
+            {
+                $match: {
+                    followedUserId: { $nin: [userId, ...followedUsersIds] }
+                }
+            },
+            {
+                $group: {
+                    _id: '$followedUserId',
+                    count: { $count: {} }
+                }
+            },
+            {
+                $sort: { count: -1 }
+            },
+            {
+                $limit: 50,
+            }
+        ])
+        const popularUsersIds = popularUsersCount.map(user => user._id)
+
+        // People that have the most followers that the user does not follow (have 0 followers)
+        const otherPopularUsers = await User
+            .find({
+                _id: {
+                    $nin: [
+                        userId,
+                        ...followedUsersIds.map(id => new Types.ObjectId(id)),
+                        ...popularUsersIds.map(id => new Types.ObjectId(id))
+                    ]
+                }
+            })
+            .limit(50)
+            .select('_id')
+        const otherPopularUsersIds = otherPopularUsers.map(user => user._id.toString())
+
+        const allPopularUsersIds = [
+            ...popularUsersIds,
+            ...otherPopularUsersIds,
+        ]
+
+        // Most recent posts by these people
+        const popularPosts = await Post.aggregate([
+            {
+                $match: { userId: { $in: allPopularUsersIds }}
+            },
+            {
+                $sort: { createdAt: -1 }
+            },
+            {
+                $group: {
+                    _id: '$userId',
+                    postId: {
+                        $first: '$_id'
+                    }
+                }
+            },
+            {
+                $limit: 50,
+            }
+        ])
+
+        const postsByUser = popularPosts.reduce((posts, post) => ({
+            ...posts,
+            [post._id]: post.postId.toString()
+        }), {})
+
+        const popularPostsIds = allPopularUsersIds
+            .filter(userId => postsByUser.hasOwnProperty(userId))
+            .map(userId => postsByUser[userId])
+
+        const suggestedPostsIds = [
+            ...followingSuggestedPostsIds,
+            ...popularPostsIds,
+        ]
+
+        const suggestedPosts = await Post.find({
+            _id: { $in: suggestedPostsIds.map(id => new Types.ObjectId(id)) }
+        })
+        const suggestedPostsById = suggestedPosts.reduce((posts, post) => ({
+            ...posts,
+            [post._id.toString()]: post
+        }), {})
+
+        return suggestedPostsIds.map(suggestedPostId => suggestedPostsById[suggestedPostId])
+
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     createPost,
     createComment,
@@ -1204,4 +1398,5 @@ export default {
     getLikedPostsForUser,
     getFavoritePostsForUser,
     getPostDetails,
+    getSuggestedPosts,
 }
