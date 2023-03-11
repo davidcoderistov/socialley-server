@@ -15,6 +15,7 @@ import PostDetails from '../models/PostDetails'
 import { Context } from '../../types'
 import postsRepository from '../../repositories/postsRepository'
 import followedUsersPostsLoader from '../../loaders/followedUsersPostsLoader'
+import suggestedPostsLoader from '../../loaders/suggestedPostsLoader'
 
 
 const CommentsForPostOutput = new GraphQLObjectType({
@@ -89,6 +90,14 @@ const LikedPostsForUserOutput = new GraphQLObjectType({
 
 const FavoritePostsForUserOutput = new GraphQLObjectType({
     name: 'FavoritePostsForUserOutput',
+    fields: () => ({
+        data: { type: new GraphQLNonNull(new GraphQLList(Post)) },
+        total: { type: new GraphQLNonNull(GraphQLInt) },
+    })
+})
+
+const SuggestedPostsOutput = new GraphQLObjectType({
+    name: 'SuggestedPostsOutput',
     fields: () => ({
         data: { type: new GraphQLNonNull(new GraphQLList(Post)) },
         total: { type: new GraphQLNonNull(GraphQLInt) },
@@ -226,6 +235,23 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
                 liked: postDetails.liked,
                 favorite: postDetails.favorite,
                 likesCount: postDetails.likesCount,
+            }
+        }
+    },
+    getSuggestedPosts: {
+        type: SuggestedPostsOutput,
+        args: {
+            offset: { type: new GraphQLNonNull(GraphQLInt) },
+            limit: { type: new GraphQLNonNull(GraphQLInt) },
+        },
+        resolve: async (_, { offset, limit }, { userId }) => {
+            if (offset === 0) {
+                suggestedPostsLoader.clear(userId)
+            }
+            const suggestedPosts = await suggestedPostsLoader.load(userId)
+            return {
+                data: suggestedPosts.slice(offset, offset + limit),
+                total: suggestedPosts.length,
             }
         }
     }
