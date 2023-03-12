@@ -1430,6 +1430,88 @@ async function getPostLikeNotificationsForUser ({ userId }: { userId: string }):
     }
 }
 
+interface GetPostCommentNotificationsForUserOptions {
+    userId: string
+    offset: number
+    limit: number
+}
+
+interface PostCommentNotification {
+    _id: string
+    user: UserType
+    post: PostType
+    createdAt: string
+}
+
+interface GetPostCommentNotificationsForUserReturnValue {
+    data: PostCommentNotification[]
+    total: number
+}
+
+async function getPostCommentNotificationsForUser ({ userId, offset, limit }: GetPostCommentNotificationsForUserOptions): Promise<GetPostCommentNotificationsForUserReturnValue> {
+    try {
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const userPosts = await Post.find({ userId }).select('_id')
+        const userPostsIds = userPosts.map(post => post._id.toString())
+
+        const fourMonthsAgo = moment().subtract(4, 'months').toDate()
+
+        const postComments = await Comment.aggregate([
+            {
+                $match: {
+                    postId: { $in: userPostsIds },
+                    userId: { $ne: userId },
+                    createdAt: { $gte: fourMonthsAgo }
+                }
+            },
+            {
+                $sort: { createdAt: -1 }
+            },
+            {
+                $facet: {
+                    metadata: [{
+                        $count: 'count'
+                    }],
+                    data: [
+                        {
+                            $skip: offset,
+                        },
+                        {
+                            $limit: limit,
+                        },
+                    ]
+                }
+            }
+        ])
+
+        const postCommentNotifications = await PostLike.populate(postComments[0].data, 'userId postId') as unknown as Array<{
+            _id: string
+            userId: UserType
+            postId: PostType
+            createdAt: string
+        }>
+
+        return {
+            total: postComments[0].metadata.length > 0 ? postComments[0].metadata[0].count : 0,
+            data: postCommentNotifications.map(postLikeNotification => ({
+                _id: postLikeNotification._id,
+                user: postLikeNotification.userId,
+                post: postLikeNotification.postId,
+                createdAt: postLikeNotification.createdAt,
+            }))
+        }
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     createPost,
     createComment,
@@ -1451,4 +1533,5 @@ export default {
     getPostDetails,
     getSuggestedPosts,
     getPostLikeNotificationsForUser,
+    getPostCommentNotificationsForUser,
 }
