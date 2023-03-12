@@ -5,13 +5,16 @@ import {
     GraphQLNonNull,
     GraphQLString,
     GraphQLInt,
+    GraphQLID,
     GraphQLObjectType,
 } from 'graphql'
+import { DateScalar } from '../scalars'
 import User from '../models/User'
 import FollowableUser from '../models/FollowableUser'
 import { Context } from '../../types'
 import userRepository from '../../repositories/userRepository'
 import suggestedUsersLoader from '../../loaders/suggestedUsersLoader'
+import followNotificationsLoader from '../../loaders/followNotificationsLoader'
 
 
 const SuggestedUser = new GraphQLObjectType({
@@ -77,6 +80,23 @@ const SearchedUser = new GraphQLObjectType({
     name: 'SearchedUser',
     fields: () => ({
         followableUser: { type: new GraphQLNonNull(FollowableUser) },
+    })
+})
+
+const FollowNotification = new GraphQLObjectType({
+    name: 'FollowNotification',
+    fields: () => ({
+        _id: { type: new GraphQLNonNull(GraphQLID) },
+        followableUser: { type: new GraphQLNonNull(FollowableUser) },
+        createdAt: { type: new GraphQLNonNull(DateScalar) },
+    })
+})
+
+const FollowNotificationsForUserOutput = new GraphQLObjectType({
+    name: 'FollowNotificationsForUserOutput',
+    fields: () => ({
+        data: { type: new GraphQLNonNull(new GraphQLList(FollowNotification)) },
+        total: { type: new GraphQLNonNull(GraphQLInt) },
     })
 })
 
@@ -192,7 +212,31 @@ const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         type: new GraphQLList(User),
         resolve: (_, __, { userId }) =>
             userRepository.getSearchedUsersForUser({ userId })
-    }
+    },
+    getFollowNotificationsForUser: {
+        type: FollowNotificationsForUserOutput,
+        args: {
+            offset: { type: new GraphQLNonNull(GraphQLInt) },
+            limit: { type: new GraphQLNonNull(GraphQLInt) },
+        },
+        resolve: async (_, { offset, limit }, { userId }) => {
+            if (offset === 0) {
+                followNotificationsLoader.clear(userId)
+            }
+            const followNotifications = await followNotificationsLoader.load(userId)
+            return {
+                data: followNotifications.map(followNotification => ({
+                    _id: followNotification._id,
+                    followableUser: {
+                        user: followNotification.user,
+                        following: followNotification.following,
+                    },
+                    createdAt: followNotification.createdAt
+                })).slice(offset, offset + limit),
+                total: followNotifications.length,
+            }
+        }
+    },
 }
 
 export default userQueries
