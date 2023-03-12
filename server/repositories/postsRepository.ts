@@ -10,6 +10,7 @@ import { Error, Document, Types } from 'mongoose'
 import { getValidationError, getCustomValidationError } from '../utils'
 import fileRepository from './fileRepository'
 import _uniq from 'lodash/uniq'
+import moment from 'moment'
 
 
 interface Post extends Document {
@@ -1383,6 +1384,52 @@ async function getSuggestedPosts ({ userId }: { userId: string }): Promise<PostT
     }
 }
 
+interface PostLikeNotification {
+    _id: string
+    user: UserType
+    post: PostType
+    createdAt: string
+}
+
+async function getPostLikeNotificationsForUser ({ userId }: { userId: string }): Promise<PostLikeNotification[]> {
+    try {
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const userPosts = await Post.find({ userId }).select('_id')
+        const userPostsIds = userPosts.map(post => post._id.toString())
+
+        const fourMonthsAgo = moment().subtract(4, 'months').toDate()
+
+        const postLikes = await PostLike.find({
+            postId: { $in: userPostsIds },
+            userId: { $ne: userId },
+            createdAt: { $gte: fourMonthsAgo }
+        }).sort({ createdAt: -1 })
+
+        const postLikeNotifications = await PostLike.populate(postLikes, 'userId postId') as unknown as Array<{
+            _id: string
+            userId: UserType
+            postId: PostType
+            createdAt: string
+        }>
+
+        return postLikeNotifications.map(postLikeNotification => ({
+            _id: postLikeNotification._id,
+            user: postLikeNotification.userId,
+            post: postLikeNotification.postId,
+            createdAt: postLikeNotification.createdAt,
+        }))
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     createPost,
     createComment,
@@ -1403,4 +1450,5 @@ export default {
     getFavoritePostsForUser,
     getPostDetails,
     getSuggestedPosts,
+    getPostLikeNotificationsForUser,
 }
