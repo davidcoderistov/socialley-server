@@ -16,6 +16,7 @@ import {
     getValidationError,
     getInvalidSessionError,
 } from '../utils'
+import moment from 'moment'
 
 
 interface SignUpOptions {
@@ -899,6 +900,54 @@ async function getSearchedUsersForUser ({ userId }: { userId: string }): Promise
     }
 }
 
+interface FollowNotification {
+    _id: string
+    user: UserType
+    following: boolean
+    createdAt: string
+}
+
+async function getFollowNotificationsForUser ({ userId }: { userId: string }): Promise<FollowNotification[]> {
+    try {
+        if (!await User.findById(userId)) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
+        }
+
+        const followedUsers = await Follow.find({ followingUserId: userId }).select('followedUserId')
+        const followedUsersIds = followedUsers.map(follow => follow.followedUserId)
+        const followedUsersIdsMap = followedUsersIds.reduce((usersMap, userId) => ({
+            ...usersMap,
+            [userId]: true
+        }), {})
+
+        const fourMonthsAgo = moment().subtract(4, 'months').toDate()
+
+        const userFollows = await Follow.find({
+            followedUserId: userId,
+            createdAt: { $gte: fourMonthsAgo }
+        }).sort({ createdAt: -1 })
+
+        const followNotifications = await Follow.populate(userFollows, 'followingUserId') as unknown as Array<{
+            _id: string
+            followingUserId: UserType
+            createdAt: string
+        }>
+
+        return followNotifications.map(followNotification => ({
+            _id: followNotification._id,
+            user: followNotification.followingUserId,
+            following: followedUsersIdsMap.hasOwnProperty(followNotification.followingUserId._id.toString()),
+            createdAt: followNotification.createdAt,
+        }))
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     signUp,
     login,
@@ -916,4 +965,5 @@ export default {
     markUserAsUnsearched,
     clearSearchHistory,
     getSearchedUsersForUser,
+    getFollowNotificationsForUser,
 }
