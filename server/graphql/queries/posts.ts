@@ -125,6 +125,24 @@ const PostLikeNotificationsForUserOutput = new GraphQLObjectType({
     })
 })
 
+const PostCommentNotification = new GraphQLObjectType({
+    name: 'PostCommentNotification',
+    fields: () => ({
+        _id: { type: new GraphQLNonNull(GraphQLID) },
+        user: { type: new GraphQLNonNull(User) },
+        post: { type: new GraphQLNonNull(Post) },
+        createdAt: { type: new GraphQLNonNull(DateScalar) },
+    })
+})
+
+const PostCommentNotificationsForUserOutput = new GraphQLObjectType({
+    name: 'PostCommentNotificationsForUserOutput',
+    fields: () => ({
+        data: { type: new GraphQLNonNull(new GraphQLList(PostCommentNotification)) },
+        total: { type: new GraphQLNonNull(GraphQLInt) },
+    })
+})
+
 const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     getCommentsForPost: {
         type: CommentsForPostOutput,
@@ -292,6 +310,15 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
                 total: postLikeNotifications.length,
             }
         }
+    },
+    getPostCommentNotificationsForUser: {
+        type: PostCommentNotificationsForUserOutput,
+        args: {
+            offset: { type: new GraphQLNonNull(GraphQLInt) },
+            limit: { type: new GraphQLNonNull(GraphQLInt) },
+        },
+        resolve: async (_, { offset, limit }, { userId }) =>
+            postsRepository.getPostCommentNotificationsForUser({ userId, offset, limit })
     }
 }
 
