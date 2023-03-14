@@ -59,7 +59,11 @@ const postsMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     createComment: {
         type: Comment,
         args: { comment: { type: CreateCommentInput }},
-        resolve: (_, { comment }, { userId }) => postsRepository.createComment({...comment, userId})
+        resolve: async (_, { comment }, { userId }) => {
+            const savedComment = await postsRepository.createComment({...comment, userId})
+            pubsub.publish(POSTS_SUBSCRIPTIONS.POST_COMMENTED, savedComment)
+            return savedComment
+        }
     },
     likePost: {
         type: PostLike,
