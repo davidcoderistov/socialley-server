@@ -3,6 +3,7 @@ import {
     GraphQLFieldConfig,
 } from 'graphql'
 import PostLikeNotification from '../models/PostLikeNotification'
+import PostCommentNotification from '../models/PostCommentNotification'
 import { pubsub } from '../../config/server'
 import { WsContext } from '../../types'
 import { withFilter } from 'graphql-subscriptions'
@@ -23,7 +24,17 @@ const postsSubscriptions: ThunkObjMap<GraphQLFieldConfig<any, WsContext>> = {
                 return payload.post.userId === userId
             }
         )
-    }
+    },
+    postCommented: {
+        type: PostCommentNotification,
+        resolve: postCommentNotification => postCommentNotification,
+        subscribe: withFilter(
+            () => pubsub.asyncIterator(POSTS_SUBSCRIPTIONS.POST_COMMENTED),
+            (payload: { post: { userId: string }}, variables, { userId }: WsContext) => {
+                return payload.post.userId === userId
+            }
+        )
+    },
 }
 
 export default postsSubscriptions
