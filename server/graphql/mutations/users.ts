@@ -10,6 +10,8 @@ import userRepository from '../../repositories/userRepository'
 import Follow from '../models/Follow'
 import UserSearch from '../models/UserSearch'
 import { Context } from '../../types'
+import { pubsub } from '../../config/server'
+import { USERS_SUBSCRIPTIONS } from '../subscriptions/users'
 
 
 const ClearSearchHistoryOutput = new GraphQLObjectType({
@@ -23,8 +25,11 @@ const usersMutations:  ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     followUser: {
         type: Follow,
         args: { followedUserId: { type: new GraphQLNonNull(GraphQLString) }},
-        resolve: (_, { followedUserId }, { userId: followingUserId }) =>
-            userRepository.followUser({ followingUserId, followedUserId })
+        resolve: async (_, { followedUserId }, { userId: followingUserId }) => {
+            const follow = await userRepository.followUser({ followingUserId, followedUserId })
+            pubsub.publish(USERS_SUBSCRIPTIONS.USER_FOLLOWED, follow)
+            return follow
+        }
     },
     unfollowUser: {
         type: Follow,
