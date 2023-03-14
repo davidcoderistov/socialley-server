@@ -5,12 +5,11 @@ import {
     GraphQLNonNull,
     GraphQLString,
     GraphQLInt,
-    GraphQLID,
     GraphQLObjectType,
 } from 'graphql'
-import { DateScalar } from '../scalars'
 import User from '../models/User'
 import FollowableUser from '../models/FollowableUser'
+import FollowNotification from '../models/FollowNotification'
 import { Context } from '../../types'
 import userRepository from '../../repositories/userRepository'
 import suggestedUsersLoader from '../../loaders/suggestedUsersLoader'
@@ -80,15 +79,6 @@ const SearchedUser = new GraphQLObjectType({
     name: 'SearchedUser',
     fields: () => ({
         followableUser: { type: new GraphQLNonNull(FollowableUser) },
-    })
-})
-
-const FollowNotification = new GraphQLObjectType({
-    name: 'FollowNotification',
-    fields: () => ({
-        _id: { type: new GraphQLNonNull(GraphQLID) },
-        followableUser: { type: new GraphQLNonNull(FollowableUser) },
-        createdAt: { type: new GraphQLNonNull(DateScalar) },
     })
 })
 
