@@ -948,6 +948,32 @@ async function getFollowNotificationsForUser ({ userId }: { userId: string }): P
     }
 }
 
+interface FollowableUser {
+    user: UserType
+    following: boolean
+}
+
+async function getFollowableUser ({ followableUserId, userId }: { followableUserId: string, userId: string }): Promise<FollowableUser> {
+    try {
+        const followableUser = await User.findById(followableUserId)
+        if (!followableUser) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${followableUserId} does not exist`))
+        }
+
+        const following = await Follow.findOne({ followingUserId: userId, followedUserId: followableUserId })
+        return {
+            user: followableUser,
+            following: !!following,
+        }
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 export default {
     signUp,
     login,
@@ -966,4 +992,5 @@ export default {
     clearSearchHistory,
     getSearchedUsersForUser,
     getFollowNotificationsForUser,
+    getFollowableUser,
 }
