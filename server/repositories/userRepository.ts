@@ -186,12 +186,7 @@ interface FollowUserOptions {
     followedUserId: string
 }
 
-interface Follow extends FollowType {
-    followingUser: UserType
-    followedUser: UserType
-}
-
-async function followUser ({ followingUserId, followedUserId }: FollowUserOptions): Promise<Follow> {
+async function followUser ({ followingUserId, followedUserId }: FollowUserOptions): Promise<FollowType> {
     try {
         if (!await User.findById(followingUserId)) {
             return Promise.reject(getCustomValidationError('followingUserId', `User with id ${followingUserId} does not exist`))
@@ -209,21 +204,7 @@ async function followUser ({ followingUserId, followedUserId }: FollowUserOption
             followingUserId,
             followedUserId,
         })
-        const savedFollow = await follow.save()
-        const populatedFollow = await Follow.populate(savedFollow, 'followingUserId followedUserId') as unknown as {
-            _id: mongoose.Types.ObjectId
-            followingUserId: UserType
-            followedUserId: UserType
-            createdAt: string
-        }
-
-        return {
-            ...savedFollow.toObject(),
-            followingUserId: populatedFollow.followingUserId._id.toString(),
-            followingUser: populatedFollow.followingUserId,
-            followedUserId: populatedFollow.followedUserId._id.toString(),
-            followedUser: populatedFollow.followedUserId,
-        }
+        return await follow.save()
     } catch (err) {
         if (err instanceof Error.ValidationError) {
             throw getValidationError(err)
