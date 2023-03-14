@@ -99,7 +99,12 @@ interface LikePostOptions {
     userId: string
 }
 
-async function likePost ({ postId, userId }: LikePostOptions): Promise<PostLikeType> {
+interface PostLike extends PostLikeType {
+    user: UserType
+    post: PostType
+}
+
+async function likePost ({ postId, userId }: LikePostOptions): Promise<PostLike> {
     try {
         if (!await Post.findById(postId)) {
             return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
@@ -117,7 +122,22 @@ async function likePost ({ postId, userId }: LikePostOptions): Promise<PostLikeT
             postId,
             userId,
         })
-        return await postLike.save()
+
+        const savedPostLike = await postLike.save()
+        const populatedPostLike = await PostLike.populate(savedPostLike, 'userId postId') as unknown as {
+            _id: Types.ObjectId
+            userId: UserType
+            postId: PostType
+            createdAt: string
+        }
+
+        return {
+            ...savedPostLike.toObject(),
+            userId: populatedPostLike.userId._id.toString(),
+            user: populatedPostLike.userId,
+            post: populatedPostLike.postId,
+            postId: populatedPostLike.postId._id.toString(),
+        }
     } catch (err) {
         if (err instanceof Error.ValidationError) {
             throw getValidationError(err)
