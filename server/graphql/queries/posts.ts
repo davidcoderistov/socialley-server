@@ -3,17 +3,17 @@ import {
     GraphQLNonNull,
     GraphQLString,
     GraphQLInt,
-    GraphQLID,
     GraphQLList,
     ThunkObjMap,
     GraphQLFieldConfig,
 } from 'graphql'
-import { DateScalar } from '../scalars'
 import User from '../models/User'
 import FollowableUser from '../models/FollowableUser'
 import Comment from '../models/Comment'
 import Post from '../models/Post'
 import PostDetails from '../models/PostDetails'
+import PostLikeNotification from '../models/PostLikeNotification'
+import PostCommentNotification from '../models/PostCommentNotification'
 import { Context } from '../../types'
 import postsRepository from '../../repositories/postsRepository'
 import followedUsersPostsLoader from '../../loaders/followedUsersPostsLoader'
@@ -107,31 +107,11 @@ const SuggestedPostsOutput = new GraphQLObjectType({
     })
 })
 
-const PostLikeNotification = new GraphQLObjectType({
-    name: 'PostLikeNotification',
-    fields: () => ({
-        _id: { type: new GraphQLNonNull(GraphQLID) },
-        user: { type: new GraphQLNonNull(User) },
-        post: { type: new GraphQLNonNull(Post) },
-        createdAt: { type: new GraphQLNonNull(DateScalar) },
-    })
-})
-
 const PostLikeNotificationsForUserOutput = new GraphQLObjectType({
     name: 'PostLikeNotificationsForUserOutput',
     fields: () => ({
         data: { type: new GraphQLNonNull(new GraphQLList(PostLikeNotification)) },
         total: { type: new GraphQLNonNull(GraphQLInt) },
-    })
-})
-
-const PostCommentNotification = new GraphQLObjectType({
-    name: 'PostCommentNotification',
-    fields: () => ({
-        _id: { type: new GraphQLNonNull(GraphQLID) },
-        user: { type: new GraphQLNonNull(User) },
-        post: { type: new GraphQLNonNull(Post) },
-        createdAt: { type: new GraphQLNonNull(DateScalar) },
     })
 })
 
