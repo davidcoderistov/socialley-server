@@ -13,6 +13,8 @@ import PostLike from '../models/PostLike'
 import UserFavorite from '../models/UserFavorite'
 import CommentLike from '../models/CommentLike'
 import postsRepository from '../../repositories/postsRepository'
+import { pubsub } from '../../config/server'
+import { POSTS_SUBSCRIPTIONS } from '../subscriptions/posts'
 
 
 const CreatePostInput = new GraphQLInputObjectType({
@@ -62,7 +64,11 @@ const postsMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     likePost: {
         type: PostLike,
         args: { postId: { type: new GraphQLNonNull(GraphQLString) }},
-        resolve: (_, { postId }, { userId }) => postsRepository.likePost({ postId, userId })
+        resolve: async (_, { postId }, { userId }) => {
+            const postLike = await postsRepository.likePost({ postId, userId })
+            pubsub.publish(POSTS_SUBSCRIPTIONS.POST_LIKED, postLike)
+            return postLike
+        }
     },
     unlikePost: {
         type: PostLike,
