@@ -69,7 +69,12 @@ interface CreateCommentOptions {
     userId: string
 }
 
-async function createComment ({ text, postId, userId }: CreateCommentOptions): Promise<CommentType> {
+interface Comment extends CommentType {
+    user: UserType
+    post: PostType
+}
+
+async function createComment ({ text, postId, userId }: CreateCommentOptions): Promise<Comment> {
     try {
         if (!await Post.findById(postId)) {
             return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
@@ -84,7 +89,21 @@ async function createComment ({ text, postId, userId }: CreateCommentOptions): P
             postId,
             userId,
         })
-        return await comment.save()
+        const savedComment = await comment.save()
+        const populatedComment = await PostLike.populate(savedComment, 'userId postId') as unknown as {
+            _id: Types.ObjectId
+            userId: UserType
+            postId: PostType
+            createdAt: string
+        }
+
+        return {
+            ...savedComment.toObject(),
+            userId: populatedComment.userId._id.toString(),
+            user: populatedComment.userId,
+            post: populatedComment.postId,
+            postId: populatedComment.postId._id.toString(),
+        }
     } catch (err) {
         if (err instanceof Error.ValidationError) {
             throw getValidationError(err)
