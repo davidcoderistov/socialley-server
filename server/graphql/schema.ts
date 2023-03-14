@@ -11,6 +11,7 @@ import usersMutations from './mutations/users'
 import messagesMutations from './mutations/messages'
 import postsMutations from './mutations/posts'
 import messagesSubscriptions from './subscriptions/messages'
+import postsSubscriptions from './subscriptions/posts'
 
 
 const Query = new GraphQLObjectType({
@@ -37,6 +38,7 @@ const Subscription = new GraphQLObjectType({
     name: 'Subscription',
     fields: {
         ...messagesSubscriptions,
+        ...postsSubscriptions,
     }
 })
 
