@@ -203,6 +203,61 @@ async function editUser (editUserOptions: EditUserOptions): Promise<UserType> {
     }
 }
 
+interface ChangePasswordOptions {
+    username: string
+    oldPassword: string
+    newPassword: string
+    confirmNewPassword: string
+}
+
+async function changePassword ({ username, oldPassword, newPassword, confirmNewPassword }: ChangePasswordOptions): Promise<UserType> {
+    try {
+        const findUser = await User.findOne({ username })
+
+        if (!findUser) {
+            return Promise.reject(getCustomValidationError('username', `User ${username} does not exist`))
+        }
+
+        if (oldPassword.length < 8) {
+            return Promise.reject(getCustomValidationError('oldPassword', 'Old password must contain at least 8 characters'))
+        }
+
+        if (newPassword.length < 8) {
+            return Promise.reject(getCustomValidationError('newPassword', 'New password must contain at least 8 characters'))
+        }
+
+        if (confirmNewPassword.length < 8) {
+            return Promise.reject(getCustomValidationError('confirmNewPassword', 'Confirm new password must contain at least 8 characters'))
+        }
+
+        if (newPassword !== confirmNewPassword) {
+            return Promise.reject(getCustomValidationError('confirmNewPassword', 'Passwords do not match'))
+        }
+
+        const passwordMatch = await bcrypt.compare(oldPassword, findUser.password)
+        if (!passwordMatch) {
+            return Promise.reject(getCustomValidationError('oldPassword', 'Wrong old password'))
+        }
+
+        const userId = findUser._id.toString()
+        findUser.password = await bcrypt.hash(newPassword, 10)
+        findUser.refreshToken = generateRefreshToken(userId)
+
+        await findUser.save()
+
+        return {
+            ...findUser.toObject(),
+            accessToken: generateAccessToken(userId),
+        }
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 interface FindUsersBySearchQueryOptions {
     userId: string
     searchQuery: string
@@ -1024,6 +1079,7 @@ export default {
     refresh,
     logout,
     editUser,
+    changePassword,
     findUsersBySearchQuery,
     followUser,
     unfollowUser,
