@@ -5,6 +5,7 @@ import {
     GraphQLNonNull,
     GraphQLString,
 } from 'graphql'
+import { GraphQLUpload } from 'graphql-upload-ts'
 import userRepository from '../../repositories/userRepository'
 import User from '../models/User'
 import AuthUser from '../models/AuthUser'
@@ -116,6 +117,18 @@ const authMutations:  ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             }
         }
     },
+    changeProfilePhoto: {
+        type: AuthUser,
+        args: { photo: { type: new GraphQLNonNull(GraphQLUpload) }},
+        resolve: async (_, { photo }, { userId: _id, setRefreshTokenCookie }) => {
+            const user = await userRepository.changeProfilePhoto({ _id, photo })
+            setRefreshTokenCookie(user.refreshToken)
+            return {
+                user,
+                accessToken: user.accessToken,
+            }
+        }
+    }
 }
 
 export default authMutations
