@@ -30,6 +30,17 @@ const LoginOptions = new GraphQLInputObjectType({
     })
 })
 
+const EditUserOptions = new GraphQLInputObjectType({
+    name: 'EditUserOptions',
+    fields: () => ({
+        _id: { type: new GraphQLNonNull(GraphQLString) },
+        firstName: { type: new GraphQLNonNull(GraphQLString) },
+        lastName: { type: new GraphQLNonNull(GraphQLString) },
+        username: { type: new GraphQLNonNull(GraphQLString) },
+        email: { type: new GraphQLNonNull(GraphQLString) },
+    })
+})
+
 const authMutations:  ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     signUp: {
         type: User,
@@ -70,7 +81,19 @@ const authMutations:  ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             setRefreshTokenCookie('', true)
             return user
         }
-    }
+    },
+    editUser: {
+        type: AuthUser,
+        args: { user: { type: EditUserOptions }},
+        resolve: async (_, { user }, { setRefreshTokenCookie }) => {
+            const loggedInUser = await userRepository.editUser(user)
+            setRefreshTokenCookie(loggedInUser.refreshToken)
+            return {
+                user: loggedInUser,
+                accessToken: loggedInUser.accessToken
+            }
+        }
+    },
 }
 
 export default authMutations
