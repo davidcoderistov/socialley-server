@@ -6,7 +6,9 @@ import PostLike from '../models/PostLike'
 import Comment from '../models/Comment'
 import bcrypt from 'bcrypt'
 import mongoose, { Error } from 'mongoose'
+import { FileUpload } from 'graphql-upload-ts'
 import { MongoError } from 'mongodb'
+import fileRepository from './fileRepository'
 import {
     generateAccessToken,
     generateRefreshToken,
@@ -248,6 +250,39 @@ async function changePassword ({ username, oldPassword, newPassword, confirmNewP
         return {
             ...findUser.toObject(),
             accessToken: generateAccessToken(userId),
+        }
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
+interface ChangeProfilePhotoOptions {
+    _id: string
+    photo: Promise<FileUpload>
+}
+
+async function changeProfilePhoto ({ _id, photo }: ChangeProfilePhotoOptions): Promise<UserType> {
+    try {
+        const user = await User.findById(_id)
+
+        if (!user) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${_id} does not exist`))
+        }
+
+        const { url } = await fileRepository.storeUpload(photo, '/storage/avatars')
+
+        user.avatarURL = url
+        user.refreshToken = generateRefreshToken(_id)
+
+        await user.save()
+
+        return {
+            ...user.toObject(),
+            accessToken: generateAccessToken(_id),
         }
     } catch (err) {
         if (err instanceof Error.ValidationError) {
@@ -1080,6 +1115,7 @@ export default {
     logout,
     editUser,
     changePassword,
+    changeProfilePhoto,
     findUsersBySearchQuery,
     followUser,
     unfollowUser,
