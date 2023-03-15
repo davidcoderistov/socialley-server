@@ -159,6 +159,50 @@ async function logout ({ refreshToken }: LogoutOptions): Promise<LogoutReturnVal
     }
 }
 
+interface EditUserOptions {
+    _id: string
+    firstName: string
+    lastName: string
+    username: string
+    email: string
+}
+
+async function editUser (editUserOptions: EditUserOptions): Promise<UserType> {
+    try {
+        const findUser = await User.findById(editUserOptions._id)
+
+        if (!findUser) {
+            return Promise.reject(getCustomValidationError('userId', `User with id ${editUserOptions._id} does not exist`))
+        }
+
+        if (findUser.username !== editUserOptions.username) {
+            if (await User.findOne({ username: editUserOptions.username })) {
+                return Promise.reject(getCustomValidationError('username', `User ${editUserOptions.username} already exists`))
+            }
+        }
+
+        findUser.firstName = editUserOptions.firstName
+        findUser.lastName = editUserOptions.lastName
+        findUser.username = editUserOptions.username
+        findUser.email = editUserOptions.email
+
+        findUser.refreshToken = generateRefreshToken(editUserOptions._id)
+
+        await findUser.save()
+
+        return {
+            ...findUser.toObject(),
+            accessToken: generateAccessToken(editUserOptions._id),
+        }
+    } catch (err) {
+        if (err instanceof Error.ValidationError) {
+            throw getValidationError(err)
+        } else {
+            throw err
+        }
+    }
+}
+
 interface FindUsersBySearchQueryOptions {
     userId: string
     searchQuery: string
@@ -979,6 +1023,7 @@ export default {
     login,
     refresh,
     logout,
+    editUser,
     findUsersBySearchQuery,
     followUser,
     unfollowUser,
