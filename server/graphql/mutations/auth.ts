@@ -41,6 +41,16 @@ const EditUserOptions = new GraphQLInputObjectType({
     })
 })
 
+const ChangePasswordOptions = new GraphQLInputObjectType({
+    name: 'ChangePasswordOptions',
+    fields: () => ({
+        username: { type: new GraphQLNonNull(GraphQLString) },
+        oldPassword: { type: new GraphQLNonNull(GraphQLString) },
+        newPassword: { type: new GraphQLNonNull(GraphQLString) },
+        confirmNewPassword: { type: new GraphQLNonNull(GraphQLString) },
+    })
+})
+
 const authMutations:  ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
     signUp: {
         type: User,
@@ -87,6 +97,18 @@ const authMutations:  ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
         args: { user: { type: EditUserOptions }},
         resolve: async (_, { user }, { setRefreshTokenCookie }) => {
             const loggedInUser = await userRepository.editUser(user)
+            setRefreshTokenCookie(loggedInUser.refreshToken)
+            return {
+                user: loggedInUser,
+                accessToken: loggedInUser.accessToken
+            }
+        }
+    },
+    changePassword: {
+        type: AuthUser,
+        args: { changePassword: { type: ChangePasswordOptions }},
+        resolve: async (_, { changePassword }, { setRefreshTokenCookie }) => {
+            const loggedInUser = await userRepository.changePassword(changePassword)
             setRefreshTokenCookie(loggedInUser.refreshToken)
             return {
                 user: loggedInUser,
