@@ -34,10 +34,10 @@ async function createPost ({ title = null, photo, video = null, userId }: Create
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
         }
 
-        const { url: photoURL } = await fileRepository.storeUpload(photo, '/storage/posts')
+        const { url: photoURL } = await fileRepository.storeUpload(photo, '/storage/posts', 1080, 1080)
         let videoURL = null
         if (video) {
-            const { url } = await fileRepository.storeUpload(photo, '/storage/posts')
+            const { url } = await fileRepository.storeUpload(photo, '/storage/posts', 1080, 1080)
             videoURL = url
         }
 
