@@ -6,13 +6,14 @@ import {
 } from 'graphql'
 import Post from './Post'
 import User from './User'
+import FollowableUser from './FollowableUser'
 
 
 const PostDetails = new GraphQLObjectType({
     name: 'PostDetails',
     fields: () => ({
         post: { type: new GraphQLNonNull(Post) },
-        user: { type: new GraphQLNonNull(User) },
+        followableUser: { type: new GraphQLNonNull(FollowableUser) },
         firstLikeUser: { type: User },
         liked: { type: new GraphQLNonNull(GraphQLBoolean) },
         favorite: { type: new GraphQLNonNull(GraphQLBoolean) },
