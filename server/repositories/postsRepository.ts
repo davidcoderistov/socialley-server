@@ -1104,7 +1104,10 @@ interface PostDetails extends PostType {
     likesCount: number
     liked: boolean
     favorite: boolean
-    user: UserType
+    followableUser: {
+        user: UserType
+        following: boolean
+    }
     firstLikeUser: UserType | null
 }
 
@@ -1212,7 +1215,17 @@ async function getPostDetails ({ postId, userId }: { postId: string, userId: str
         ])
 
         if (posts.length > 0) {
-            return posts[0]
+            let following = true
+            if (userId !== posts[0].userId) {
+                following = await Follow.findOne({ followingUserId: userId, followedUserId: posts[0].userId })
+            }
+            return {
+                ...posts[0],
+                followableUser: {
+                    user: posts[0].user,
+                    following: !!following,
+                }
+            }
         } else {
             return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
         }
