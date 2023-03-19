@@ -49,6 +49,10 @@ const postsMutations: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
                     videoURL: createdPost.videoURL,
                     createdAt: createdPost.createdAt,
                 },
+                followableUser: {
+                    user: createdPost.user,
+                    following: true,
+                },
                 firstLikeUser: null,
                 liked: false,
                 favorite: false,
