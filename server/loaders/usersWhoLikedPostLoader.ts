@@ -24,6 +24,6 @@ const usersWhoLikedPostLoader = new DataLoader(async (keys: LoaderKey[]) => {
         }), {})
 
     return keys.map(key => usersWhoLikedPostByUserObject[generateKey(key)])
-})
+}, { cacheKeyFn: generateKey })
 
 export default usersWhoLikedPostLoader

@@ -24,6 +24,6 @@ const followersForUserLoader = new DataLoader(async (keys: LoaderKey[]) => {
         }), {})
 
     return keys.map(key => followersForUserByUserObject[generateKey(key)])
-})
+}, { cacheKeyFn: generateKey })
 
 export default followersForUserLoader

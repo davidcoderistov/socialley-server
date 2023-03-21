@@ -24,6 +24,6 @@ const usersWhoLikedCommentLoader = new DataLoader(async (keys: LoaderKey[]) => {
         }), {})
 
     return keys.map(key => usersWhoLikedCommentByUserObject[generateKey(key)])
-})
+}, { cacheKeyFn: generateKey })
 
 export default usersWhoLikedCommentLoader
