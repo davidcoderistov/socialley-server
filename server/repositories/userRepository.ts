@@ -320,19 +320,13 @@ interface FollowUserOptions {
     followedUserId: string
 }
 
-interface FollowUserReturnValue {
-    follow: FollowType
-    followedUser: UserType
-}
-
-async function followUser ({ followingUserId, followedUserId }: FollowUserOptions): Promise<FollowUserReturnValue> {
+async function followUser ({ followingUserId, followedUserId }: FollowUserOptions): Promise<FollowType> {
     try {
         if (!await User.findById(followingUserId)) {
             return Promise.reject(getCustomValidationError('followingUserId', `User with id ${followingUserId} does not exist`))
         }
 
-        const followedUser = await User.findById(followedUserId)
-        if (!followedUser) {
+        if (!await User.findById(followedUserId)) {
             return Promise.reject(getCustomValidationError('followedUserId', `User with id ${followedUserId} does not exist`))
         }
 
@@ -344,12 +338,7 @@ async function followUser ({ followingUserId, followedUserId }: FollowUserOption
             followingUserId,
             followedUserId,
         })
-        await follow.save()
-
-        return {
-            follow,
-            followedUser,
-        }
+        return await follow.save()
     } catch (err) {
         if (err instanceof Error.ValidationError) {
             throw getValidationError(err)
