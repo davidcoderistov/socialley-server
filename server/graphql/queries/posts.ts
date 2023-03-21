@@ -19,6 +19,7 @@ import postsRepository from '../../repositories/postsRepository'
 import followedUsersPostsLoader from '../../loaders/followedUsersPostsLoader'
 import suggestedPostsLoader from '../../loaders/suggestedPostsLoader'
 import postLikeNotificationsLoader from '../../loaders/postLikeNotificationsLoader'
+import usersWhoLikedPostLoader from '../../loaders/usersWhoLikedPostLoader'
 
 
 const CommentsForPostOutput = new GraphQLObjectType({
@@ -176,11 +177,14 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             offset: { type: new GraphQLNonNull(GraphQLInt) },
             limit: { type: new GraphQLNonNull(GraphQLInt) },
         },
-        resolve: async (_, args, { userId }) => {
-            const usersWhoLikedPost = await postsRepository.getUsersWhoLikedPost({ ...args,userId })
+        resolve: async (_, { postId, offset, limit }, { userId }) => {
+            if (offset === 0) {
+                usersWhoLikedPostLoader.clear({ userId, postId })
+            }
+            const usersWhoLikedPost = await postsRepository.getUsersWhoLikedPost({ userId, postId })
             return {
-                ...usersWhoLikedPost,
-                data: usersWhoLikedPost.data.map(userWhoLikedPost => ({
+                total: usersWhoLikedPost.length,
+                data: usersWhoLikedPost.slice(offset, offset + limit).map(userWhoLikedPost => ({
                     followableUser: {
                         user: userWhoLikedPost,
                         following: userWhoLikedPost.following
