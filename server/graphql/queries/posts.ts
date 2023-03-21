@@ -20,6 +20,7 @@ import followedUsersPostsLoader from '../../loaders/followedUsersPostsLoader'
 import suggestedPostsLoader from '../../loaders/suggestedPostsLoader'
 import postLikeNotificationsLoader from '../../loaders/postLikeNotificationsLoader'
 import usersWhoLikedPostLoader from '../../loaders/usersWhoLikedPostLoader'
+import usersWhoLikedCommentLoader from '../../loaders/usersWhoLikedCommentLoader'
 
 
 const CommentsForPostOutput = new GraphQLObjectType({
@@ -200,11 +201,14 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             offset: { type: new GraphQLNonNull(GraphQLInt) },
             limit: { type: new GraphQLNonNull(GraphQLInt) },
         },
-        resolve: async (_, args, { userId }) => {
-            const usersWhoLikedComment = await postsRepository.getUsersWhoLikedComment({ ...args,userId })
+        resolve: async (_, { commentId, offset, limit }, { userId }) => {
+            if (offset === 0) {
+                usersWhoLikedCommentLoader.clear({ userId, commentId })
+            }
+            const usersWhoLikedComment = await postsRepository.getUsersWhoLikedComment({ userId, commentId })
             return {
-                ...usersWhoLikedComment,
-                data: usersWhoLikedComment.data.map(userWhoLikedComment => ({
+                total: usersWhoLikedComment.length,
+                data: usersWhoLikedComment.slice(offset, offset + limit).map(userWhoLikedComment => ({
                     followableUser: {
                         user: userWhoLikedComment,
                         following: userWhoLikedComment.following
