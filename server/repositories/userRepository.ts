@@ -596,8 +596,6 @@ async function getSuggestedUsers ({ userId }: GetSuggestedUsersOptions): Promise
 interface GetFollowingForUserOptions {
     userId: string
     loggedInUserId: string
-    offset: number
-    limit: number
 }
 
 interface UserFollowing {
@@ -608,12 +606,7 @@ interface UserFollowing {
     createdAt: string
 }
 
-interface GetFollowingForUserReturnValue {
-    data: UserFollowing[]
-    total: number
-}
-
-async function getFollowingForUser ({ userId, loggedInUserId, offset, limit }: GetFollowingForUserOptions): Promise<GetFollowingForUserReturnValue> {
+async function getFollowingForUser ({ userId, loggedInUserId }: GetFollowingForUserOptions): Promise<UserFollowing[]> {
     try {
         if (!await User.findById(userId)) {
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
@@ -627,61 +620,37 @@ async function getFollowingForUser ({ userId, loggedInUserId, offset, limit }: G
         const followedUsersIdsForLoggedInUser = userFollowsForLoggedInUser.map(follow => follow.followedUserId)
         followedUsersIdsForLoggedInUser.push(loggedInUserId)
 
-        const followingAggregateData = await Follow.aggregate([
+        return await Follow.aggregate([
             {
                 $match: { followingUserId: userId }
             },
             {
                 $addFields: {
                     following: { $in: ['$followedUserId', followedUsersIdsForLoggedInUser] },
+                    followedUserObjectId: { $toObjectId: '$followedUserId' },
                 }
             },
             {
                 $sort: { following: -1, createdAt: -1 }
             },
             {
-                $facet: {
-                    metadata: [{
-                        $count: 'count'
-                    }],
-                    data: [
-                        {
-                            $skip: offset,
-                        },
-                        {
-                            $limit: limit,
-                        },
-                        {
-                            $addFields: {
-                                followedUserObjectId: { $toObjectId: '$followedUserId' }
-                            }
-                        },
-                        {
-                            $lookup: {
-                                from: User.collection.name,
-                                localField: 'followedUserObjectId',
-                                foreignField: '_id',
-                                as: 'followedUsers'
-                            }
-                        },
-                        {
-                            $project: {
-                                _id: 1,
-                                followingUserId: 1,
-                                followedUser: { $ifNull: [ { $arrayElemAt: [ '$followedUsers', 0 ] }, null ] },
-                                following: 1,
-                                createdAt: 1,
-                            }
-                        },
-                    ]
+                $lookup: {
+                    from: User.collection.name,
+                    localField: 'followedUserObjectId',
+                    foreignField: '_id',
+                    as: 'followedUsers'
                 }
-            }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    followingUserId: 1,
+                    followedUser: { $ifNull: [ { $arrayElemAt: [ '$followedUsers', 0 ] }, null ] },
+                    following: 1,
+                    createdAt: 1,
+                }
+            },
         ])
-
-        return {
-            data: followingAggregateData[0].data,
-            total: followingAggregateData[0].metadata.length > 0 ? followingAggregateData[0].metadata[0].count : 0,
-        }
     } catch (err) {
         if (err instanceof Error.ValidationError) {
             throw getValidationError(err)
