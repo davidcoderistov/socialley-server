@@ -138,7 +138,7 @@ const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             if (offset === 0) {
                 followingForUserLoader.clear({ loggedInUserId, userId })
             }
-            const following = await userRepository.getFollowingForUser({ loggedInUserId, userId })
+            const following = await followingForUserLoader.load({ loggedInUserId, userId })
             return {
                 total: following.length,
                 data: following.slice(offset, offset + limit).map(following => ({
@@ -161,7 +161,7 @@ const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             if (offset === 0) {
                 followersForUserLoader.clear({ loggedInUserId, userId })
             }
-            const followers = await userRepository.getFollowersForUser({ userId, loggedInUserId })
+            const followers = await followersForUserLoader.load({ userId, loggedInUserId })
             return {
                 total: followers.length,
                 data: followers.slice(offset, offset + limit).map(follower => ({
