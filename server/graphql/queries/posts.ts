@@ -182,7 +182,7 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             if (offset === 0) {
                 usersWhoLikedPostLoader.clear({ userId, postId })
             }
-            const usersWhoLikedPost = await postsRepository.getUsersWhoLikedPost({ userId, postId })
+            const usersWhoLikedPost = await usersWhoLikedPostLoader.load({ userId, postId })
             return {
                 total: usersWhoLikedPost.length,
                 data: usersWhoLikedPost.slice(offset, offset + limit).map(userWhoLikedPost => ({
@@ -205,7 +205,7 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             if (offset === 0) {
                 usersWhoLikedCommentLoader.clear({ userId, commentId })
             }
-            const usersWhoLikedComment = await postsRepository.getUsersWhoLikedComment({ userId, commentId })
+            const usersWhoLikedComment = await usersWhoLikedCommentLoader.load({ userId, commentId })
             return {
                 total: usersWhoLikedComment.length,
                 data: usersWhoLikedComment.slice(offset, offset + limit).map(userWhoLikedComment => ({
