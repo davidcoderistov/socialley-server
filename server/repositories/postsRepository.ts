@@ -681,20 +681,13 @@ async function getAllFollowedUsersPosts ({ userId }: { userId: string }): Promis
 interface GetUsersWhoLikedPostOptions {
     postId: string
     userId: string
-    offset: number
-    limit: number
 }
 
 interface LikingUser extends UserType {
     following: boolean
 }
 
-interface GetUsersWhoLikedPostReturnValue {
-    total: number
-    data: LikingUser[]
-}
-
-async function getUsersWhoLikedPost ({ postId, userId, offset, limit }: GetUsersWhoLikedPostOptions): Promise<GetUsersWhoLikedPostReturnValue> {
+async function getUsersWhoLikedPost ({ postId, userId }: GetUsersWhoLikedPostOptions): Promise<LikingUser[]> {
     try {
         if (!await Post.findById(postId)) {
             return Promise.reject(getCustomValidationError('postId', `Post with id ${postId} does not exist`))
@@ -704,36 +697,9 @@ async function getUsersWhoLikedPost ({ postId, userId, offset, limit }: GetUsers
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
         }
 
-        const paginatedUsersData = await PostLike.aggregate([
-            {
-                $match: { postId }
-            },
-            {
-                $sort: { createdAt: -1 }
-            },
-            {
-                $facet: {
-                    metadata: [{
-                        $count: 'count'
-                    }],
-                    data: [
-                        {
-                            $skip: offset,
-                        },
-                        {
-                            $limit: limit,
-                        },
-                        {
-                            $project: {
-                                userId: 1
-                            }
-                        }
-                    ]
-                }
-            }
-        ])
+        const postLikes = await PostLike.find({ postId }).sort({ createdAt: -1 })
 
-        const users = await PostLike.populate(paginatedUsersData[0].data, 'userId') as unknown as Array<{ userId: Document }>
+        const users = await PostLike.populate(postLikes, 'userId') as unknown as Array<{ userId: Document }>
 
         const userFollows = await Follow.find({ followingUserId: userId }).select('followedUserId')
         const followedUsersIds = userFollows.map(follow => follow.followedUserId)
@@ -742,13 +708,10 @@ async function getUsersWhoLikedPost ({ postId, userId, offset, limit }: GetUsers
             [userId]: true
         }), {})
 
-        return {
-            total: paginatedUsersData[0].metadata.length > 0 ? paginatedUsersData[0].metadata[0].count : 0,
-            data: users.map(user => ({
-                ...user.userId.toObject(),
-                following: followedUsersIdsMap.hasOwnProperty(user.userId._id.toString())
-            }))
-        }
+        return users.map(user => ({
+            ...user.userId.toObject(),
+            following: followedUsersIdsMap.hasOwnProperty(user.userId._id.toString())
+        }))
     } catch (err) {
         if (err instanceof Error.ValidationError) {
             throw getValidationError(err)
