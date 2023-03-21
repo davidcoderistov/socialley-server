@@ -14,6 +14,7 @@ import { Context } from '../../types'
 import userRepository from '../../repositories/userRepository'
 import suggestedUsersLoader from '../../loaders/suggestedUsersLoader'
 import followNotificationsLoader from '../../loaders/followNotificationsLoader'
+import followingForUserLoader from '../../loaders/followingForUserLoader'
 
 
 const SuggestedUser = new GraphQLObjectType({
@@ -133,15 +134,18 @@ const userQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
             limit: { type: new GraphQLNonNull(GraphQLInt) },
         },
         resolve: async (_, { userId, offset, limit }, { userId: loggedInUserId }) => {
-            const following = await userRepository.getFollowingForUser({ userId, loggedInUserId, offset, limit })
+            if (offset === 0) {
+                followingForUserLoader.clear({ loggedInUserId, userId })
+            }
+            const following = await userRepository.getFollowingForUser({ loggedInUserId, userId })
             return {
-                data: following.data.map(following => ({
+                total: following.length,
+                data: following.slice(offset, offset + limit).map(following => ({
                     followableUser: {
                         user: following.followedUser,
                         following: following.following
                     }
                 })),
-                total: following.total
             }
         }
     },
