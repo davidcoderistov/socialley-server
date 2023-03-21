@@ -724,16 +724,9 @@ async function getUsersWhoLikedPost ({ postId, userId }: GetUsersWhoLikedPostOpt
 interface GetUsersWhoLikedCommentOptions {
     commentId: string
     userId: string
-    offset: number
-    limit: number
 }
 
-interface GetUsersWhoLikedCommentReturnValue {
-    total: number
-    data: LikingUser[]
-}
-
-async function getUsersWhoLikedComment ({ commentId, userId, offset, limit }: GetUsersWhoLikedCommentOptions): Promise<GetUsersWhoLikedCommentReturnValue> {
+async function getUsersWhoLikedComment ({ commentId, userId }: GetUsersWhoLikedCommentOptions): Promise<LikingUser[]> {
     try {
         if (!await Comment.findById(commentId)) {
             return Promise.reject(getCustomValidationError('commentId', `Comment with id ${commentId} does not exist`))
@@ -743,36 +736,9 @@ async function getUsersWhoLikedComment ({ commentId, userId, offset, limit }: Ge
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
         }
 
-        const paginatedUsersData = await CommentLike.aggregate([
-            {
-                $match: { commentId }
-            },
-            {
-                $sort: { createdAt: -1 }
-            },
-            {
-                $facet: {
-                    metadata: [{
-                        $count: 'count'
-                    }],
-                    data: [
-                        {
-                            $skip: offset,
-                        },
-                        {
-                            $limit: limit,
-                        },
-                        {
-                            $project: {
-                                userId: 1
-                            }
-                        }
-                    ]
-                }
-            }
-        ])
+        const commentLikes = await CommentLike.find({ commentId }).sort({ createdAt: -1 })
 
-        const users = await CommentLike.populate(paginatedUsersData[0].data, 'userId') as unknown as Array<{ userId: Document }>
+        const users = await CommentLike.populate(commentLikes, 'userId') as unknown as Array<{ userId: Document }>
 
         const userFollows = await Follow.find({ followingUserId: userId }).select('followedUserId')
         const followedUsersIds = userFollows.map(follow => follow.followedUserId)
@@ -781,13 +747,10 @@ async function getUsersWhoLikedComment ({ commentId, userId, offset, limit }: Ge
             [userId]: true
         }), {})
 
-        return {
-            total: paginatedUsersData[0].metadata.length > 0 ? paginatedUsersData[0].metadata[0].count : 0,
-            data: users.map(user => ({
-                ...user.userId.toObject(),
-                following: followedUsersIdsMap.hasOwnProperty(user.userId._id.toString())
-            }))
-        }
+        return users.map(user => ({
+            ...user.userId.toObject(),
+            following: followedUsersIdsMap.hasOwnProperty(user.userId._id.toString())
+        }))
     } catch (err) {
         if (err instanceof Error.ValidationError) {
             throw getValidationError(err)
