@@ -549,7 +549,7 @@ async function getSuggestedUsers ({ userId }: GetSuggestedUsersOptions): Promise
                     avatarURL: { $first: '$avatarURL' },
                     username: { $first: '$username' },
                     latestFollowerId: {
-                        $first: {
+                        $max: {
                             $cond: {
                                 if: { $in: ['$follows.followingUserId', followedUsersIds] },
                                 then: '$follows.followingUserId',
