@@ -524,6 +524,24 @@ async function getSuggestedUsers ({ userId }: GetSuggestedUsersOptions): Promise
                 }
             },
             {
+                $project: {
+                    _id: 1,
+                    firstName: 1,
+                    lastName: 1,
+                    username: 1,
+                    avatarURL: 1,
+                    follows: {
+                        $filter: {
+                            input: '$follows',
+                            as: 'follow',
+                            cond: {
+                                $in: ['$$follow.followingUserId', followedUsersIds]
+                            }
+                        }
+                    }
+                }
+            },
+            {
                 $unwind: {
                     path: '$follows',
                     preserveNullAndEmptyArrays: true,
@@ -548,15 +566,7 @@ async function getSuggestedUsers ({ userId }: GetSuggestedUsersOptions): Promise
                     lastName: { $first: '$lastName' },
                     avatarURL: { $first: '$avatarURL' },
                     username: { $first: '$username' },
-                    latestFollowerId: {
-                        $max: {
-                            $cond: {
-                                if: { $in: ['$follows.followingUserId', followedUsersIds] },
-                                then: '$follows.followingUserId',
-                                else: null
-                            }
-                        }
-                    },
+                    latestFollowerId: { $first: '$follows.followingUserId' },
                     followedCount: {
                         $sum: {
                             $cond: {
