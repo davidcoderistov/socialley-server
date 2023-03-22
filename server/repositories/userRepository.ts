@@ -498,7 +498,11 @@ async function getSuggestedUsers ({ userId }: GetSuggestedUsersOptions): Promise
             [user._id]: (users[user._id] ?? 0) + user.count
         }), {})
 
-        const suggestedUsersIds = Object.keys(suggestedUsersWithCount)
+        const allSuggestedUsersIds = Object
+            .keys(suggestedUsersWithCount)
+            .sort((a, b) => suggestedUsersWithCount[b] - suggestedUsersWithCount[a])
+
+        const suggestedUsersIds = allSuggestedUsersIds.slice(0, 15)
 
         const suggestedUsers = await User.aggregate([
             {
@@ -565,9 +569,6 @@ async function getSuggestedUsers ({ userId }: GetSuggestedUsersOptions): Promise
                 }
             },
             {
-                $limit: 15
-            },
-            {
                 $addFields: {
                     latestFollowerObjectId: {
                         $cond: {
@@ -589,7 +590,13 @@ async function getSuggestedUsers ({ userId }: GetSuggestedUsersOptions): Promise
         ])
 
         return suggestedUsers
-            .sort((a, b) => suggestedUsersWithCount[b._id] - suggestedUsersWithCount[a._id])
+            .sort((a, b) => {
+                const countWeight = suggestedUsersWithCount[b._id.toString()] - suggestedUsersWithCount[a._id.toString()]
+                if (countWeight === 0) {
+                    return b.followedCount - a.followedCount
+                }
+                return countWeight
+            })
             .map(user => ({
                 ...user,
                 latestFollower: Array.isArray(user.followers) && user.followers.length > 0 ? user.followers[0] : null,
