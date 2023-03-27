@@ -154,7 +154,6 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
                             _id: followedUserPost._id,
                             title: followedUserPost.title,
                             photoURL: followedUserPost.photoURL,
-                            videoURL: followedUserPost.videoURL,
                             createdAt: followedUserPost.createdAt,
                         },
                         followableUser: {
@@ -257,7 +256,6 @@ const postsQueries: ThunkObjMap<GraphQLFieldConfig<any, Context>> = {
                     _id: postDetails._id,
                     title: postDetails.title,
                     photoURL: postDetails.photoURL,
-                    videoURL: postDetails.videoURL,
                     createdAt: postDetails.createdAt,
                 },
                 followableUser: postDetails.followableUser,

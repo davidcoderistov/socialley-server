@@ -7,7 +7,6 @@ const PostSchema = new Schema({
         type: Schema.Types.String,
         required: [true, 'Photo URL is required']
     },
-    videoURL: Schema.Types.String,
     userId: {
         type: Schema.Types.String,
         required: [true, 'User is required'],
@@ -19,7 +18,6 @@ export type PostType = {
     _id: Types.ObjectId
     title?: string | null
     photoURL: string
-    videoURL: string | null
     userId: string
 } & SchemaTimestampsConfig
 

@@ -13,7 +13,6 @@ const Post = new GraphQLObjectType({
         _id: { type: new GraphQLNonNull(GraphQLID) },
         title: { type: GraphQLString },
         photoURL: { type: new GraphQLNonNull(GraphQLString) },
-        videoURL: { type: GraphQLString },
         createdAt: { type: new GraphQLNonNull(DateScalar) },
     })
 })

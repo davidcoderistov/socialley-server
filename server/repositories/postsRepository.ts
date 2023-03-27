@@ -20,7 +20,6 @@ interface Post extends Document {
 interface CreatePostOptions {
     title?: string | null
     photo: Promise<FileUpload>
-    video?: Promise<FileUpload> | null
     userId: string
 }
 
@@ -28,23 +27,17 @@ interface CreatePostReturnValue extends PostType {
     user: UserType
 }
 
-async function createPost ({ title = null, photo, video = null, userId }: CreatePostOptions): Promise<CreatePostReturnValue> {
+async function createPost ({ title = null, photo, userId }: CreatePostOptions): Promise<CreatePostReturnValue> {
     try {
         if (!await User.findById(userId)) {
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
         }
 
         const { url: photoURL } = await fileRepository.storeUpload(photo, '/storage/posts', 1080, 1080)
-        let videoURL = null
-        if (video) {
-            const { url } = await fileRepository.storeUpload(photo, '/storage/posts', 1080, 1080)
-            videoURL = url
-        }
 
         const post = new Post({
             title,
             photoURL,
-            videoURL,
             userId
         })
         await post.save()
@@ -414,7 +407,6 @@ async function getFollowedUsersPosts ({ userId, offset, limit }: GetFollowedUser
                     postId: 1,
                     title: 1,
                     photoURL: 1,
-                    videoURL: 1,
                     userId: 1,
                     createdAt: 1,
                     commentsCount: { $size: '$comments' }
@@ -465,7 +457,6 @@ async function getFollowedUsersPosts ({ userId, offset, limit }: GetFollowedUser
                     postId: { $first: '$postId' },
                     title: { $first: '$title' },
                     photoURL: { $first: '$photoURL' },
-                    videoURL: { $first: '$videoURL' },
                     userId: { $first: '$userId' },
                     createdAt: { $first: '$createdAt' },
                     commentsCount: { $first: '$commentsCount' },
@@ -572,7 +563,6 @@ async function getAllFollowedUsersPosts ({ userId }: { userId: string }): Promis
                     postId: 1,
                     title: 1,
                     photoURL: 1,
-                    videoURL: 1,
                     userId: 1,
                     createdAt: 1,
                     commentsCount: { $size: '$comments' }
@@ -623,7 +613,6 @@ async function getAllFollowedUsersPosts ({ userId }: { userId: string }): Promis
                     postId: { $first: '$postId' },
                     title: { $first: '$title' },
                     photoURL: { $first: '$photoURL' },
-                    videoURL: { $first: '$videoURL' },
                     userId: { $first: '$userId' },
                     createdAt: { $first: '$createdAt' },
                     commentsCount: { $first: '$commentsCount' },
@@ -1095,7 +1084,6 @@ async function getPostDetails ({ postId, userId }: { postId: string, userId: str
                     postId: { $first: '$postId' },
                     title: { $first: '$title' },
                     photoURL: { $first: '$photoURL' },
-                    videoURL: { $first: '$videoURL' },
                     userId: { $first: '$userId' },
                     createdAt: { $first: '$createdAt' },
                     liked: { $first: '$liked' },
