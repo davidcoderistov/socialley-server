@@ -8,5 +8,11 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "types": ["node"]
-  }
+  },
+  "include": [
+    "server/**/*"
+  ],
+  "exclude": [
+    "client/**/*"
+  ],
 }
