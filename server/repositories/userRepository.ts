@@ -19,6 +19,11 @@ import {
     getInvalidSessionError,
 } from '../utils'
 import moment from 'moment'
+import followedUsersPostsLoader from '../loaders/followedUsersPostsLoader'
+import followNotificationsLoader from '../loaders/followNotificationsLoader'
+import postLikeNotificationsLoader from '../loaders/postLikeNotificationsLoader'
+import suggestedPostsLoader from '../loaders/suggestedPostsLoader'
+import suggestedUsersLoader from '../loaders/suggestedUsersLoader'
 
 
 interface SignUpOptions {
@@ -153,6 +158,12 @@ async function logout ({ refreshToken }: LogoutOptions): Promise<LogoutReturnVal
         if (!user || user.refreshToken !== refreshToken) {
             return Promise.reject(getInvalidSessionError())
         }
+
+        followedUsersPostsLoader.clear(id)
+        followNotificationsLoader.clear(id)
+        postLikeNotificationsLoader.clear(id)
+        suggestedPostsLoader.clear(id)
+        suggestedUsersLoader.clear(id)
 
         user.refreshToken = undefined
         return await user.save()
