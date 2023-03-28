@@ -1,6 +1,7 @@
 import express from 'express'
 import http from 'http'
 import cors from 'cors'
+import path from 'path'
 import { json } from 'body-parser'
 import { WebSocketServer } from 'ws'
 import { useServer } from 'graphql-ws/lib/use/ws'
@@ -77,7 +78,13 @@ const setupServer = async () => {
         ]
     })
 
+    app.use(express.static(path.join(__dirname, '../../client/build')))
+
     app.use('/api', cors({ origin: 'http://localhost:3000', credentials: true }), json(), graphQLUploadMiddleware)
+
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, '../../client/build/index.html'))
+    })
 
     await server.start()
 

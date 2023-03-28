@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "compile": "tsc",
-    "start": "npm run compile && node ./dist/index.js",
+    "start": "npm install && npm run compile && copyfiles -u 1 server/storage/** dist && node ./dist/index.js",
     "dev": "nodemon ./server/index.ts"
   },
   "keywords": [],
@@ -21,6 +21,7 @@
     "bcrypt": "^5.1.0",
     "body-parser": "^1.20.1",
     "cookie": "^0.5.0",
+    "copyfiles": "^2.4.1",
     "cors": "^2.8.5",
     "dataloader": "^2.2.2",
     "express": "^4.18.2",
