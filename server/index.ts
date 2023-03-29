@@ -6,7 +6,7 @@ import setupServer from './config/server'
 dotenv.config()
 
 // Connect to database
-connectDB()
-
-// Set up server
-setupServer()
+connectDB().then(() => {
+    // Set up server
+    setupServer().catch(console.log)
+}).catch(console.log)
