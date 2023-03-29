@@ -6,7 +6,7 @@
   "scripts": {
     "compile": "node_modules/.bin/tsc",
     "start": "npm run compile && node ./dist/index.js",
-    "dev": "node_modules/.bin/nodemon ./server/index.ts"
+    "dev": "node_modules/.bin/nodemon index.ts"
   },
   "keywords": [],
   "author": "",
