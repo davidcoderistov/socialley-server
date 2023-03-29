@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "compile": "tsc",
-    "start": "cd client && npm install && npm run build && cd .. && npm install && npm run compile && copyfiles -u 1 server/storage/** dist && node ./dist/index.js",
+    "start": "npm install && npm run compile && copyfiles -u 1 server/storage/** dist && node ./dist/index.js",
     "dev": "nodemon ./server/index.ts"
   },
   "keywords": [],
