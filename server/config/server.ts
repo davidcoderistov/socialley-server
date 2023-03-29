@@ -77,7 +77,7 @@ const setupServer = async () => {
         ]
     })
 
-    app.use('/api', cors({ origin: 'http://localhost:3000', credentials: true }), json(), graphQLUploadMiddleware)
+    app.use('/api', cors({ origin: process.env.CORS_ORIGIN, credentials: true }), json(), graphQLUploadMiddleware)
 
     await server.start()
 
@@ -96,7 +96,7 @@ const setupServer = async () => {
     }))
 
     httpServer.listen(process.env.PORT, () => {
-        console.log(`Server listening on http://localhost:${process.env.PORT}/api`)
+        console.log(`Server listening on ${process.env.API_URL}:${process.env.PORT}/api`)
     })
 }
 
