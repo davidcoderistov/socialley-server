@@ -2,7 +2,7 @@
   "name": "socialley",
   "version": "1.0.0",
   "description": "",
-  "main": "./dist/index.js",
+  "main": "index.js",
   "scripts": {
     "compile": "tsc",
     "start": "cd client && npm install && npm run build && cd .. && npm install && npm run compile && copyfiles -u 1 server/storage/** dist && node ./dist/index.js",
