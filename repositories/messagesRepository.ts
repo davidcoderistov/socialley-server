@@ -25,8 +25,7 @@ async function createMessage ({ fromUserId, toUserId, message, photo }: CreateMe
         }
         let photoURL = null
         if (photo) {
-            const { url } = await fileRepository.storeUpload(photo, '/storage/messages', 236, 136)
-            photoURL = url
+            photoURL = await fileRepository.storeUpload(photo, '/storage/messages', 236, 136)
         }
         const createdMessage = new Message({
             fromUserId,

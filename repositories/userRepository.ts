@@ -284,9 +284,7 @@ async function changeProfilePhoto ({ _id, photo }: ChangeProfilePhotoOptions): P
             return Promise.reject(getCustomValidationError('userId', `User with id ${_id} does not exist`))
         }
 
-        const { url } = await fileRepository.storeUpload(photo, '/storage/avatars', 180, 180)
-
-        user.avatarURL = url
+        user.avatarURL = await fileRepository.storeUpload(photo, '/storage/avatars', 180, 180)
         user.refreshToken = generateRefreshToken(_id)
 
         await user.save()

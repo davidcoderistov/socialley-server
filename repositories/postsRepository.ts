@@ -33,7 +33,7 @@ async function createPost ({ title = null, photo, userId }: CreatePostOptions): 
             return Promise.reject(getCustomValidationError('userId', `User with id ${userId} does not exist`))
         }
 
-        const { url: photoURL } = await fileRepository.storeUpload(photo, '/storage/posts', 1080, 1080)
+        const photoURL = await fileRepository.storeUpload(photo, '/storage/posts', 1080, 1080)
 
         const post = new Post({
             title,
