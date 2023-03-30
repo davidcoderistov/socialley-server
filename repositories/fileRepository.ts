@@ -3,14 +3,13 @@ import path from 'path'
 import fs from 'fs'
 import { FileUpload } from 'graphql-upload-ts'
 import sharp from 'sharp'
+import { v2 as cloudinary } from 'cloudinary'
 
 
-async function storeUpload (upload: Promise<FileUpload>, url: string, width: number, height: number) {
+async function storeUpload (upload: Promise<FileUpload>, url: string, width: number, height: number): Promise<string> {
     const { createReadStream, filename } = await upload
     const stream = createReadStream()
-    const storedFileName = `${new Date().getTime()}-${filename}`
-    const storedFileDbUrl = path.join('/', url, storedFileName)
-    const storedFileUrl = path.join(__dirname, '..', storedFileDbUrl)
+    const storedFileUrl = path.join(__dirname, '..', path.join('/', url, `${new Date().getTime()}-${filename}`))
 
     const chunks: Buffer[] = []
 
@@ -42,10 +41,17 @@ async function storeUpload (upload: Promise<FileUpload>, url: string, width: num
         writeStream.end()
     })
 
-    return {
-        name: storedFileName,
-        url: storedFileDbUrl,
-    }
+    return await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload(storedFileUrl, {folder: url})
+            .then(result => {
+                unlink(storedFileUrl, () => {
+                    resolve(result.secure_url)
+                })
+            })
+            .catch(error => {
+                reject(error)
+            })
+    })
 }
 
 async function getEncodedFile (url: string) {
