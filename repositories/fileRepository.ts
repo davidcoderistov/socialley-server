@@ -8,7 +8,7 @@ import { v2 as cloudinary } from 'cloudinary'
 async function storeUpload (upload: Promise<FileUpload>, url: string, width: number, height: number): Promise<string> {
     const { createReadStream, filename } = await upload
     const stream = createReadStream()
-    const storedFileUrl = path.join(__dirname, '..', path.join('/', url, `${new Date().getTime()}-${filename}`))
+    const storedFileUrl = path.join(__dirname, '..', path.join('/', `${new Date().getTime()}-${filename}`))
 
     const chunks: Buffer[] = []
 
