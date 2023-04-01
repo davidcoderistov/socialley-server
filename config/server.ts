@@ -89,7 +89,11 @@ const setupServer = async () => {
                     res.setHeader('Set-Cookie',serializeRefreshToken(refreshToken, immediate))
                 },
                 getRefreshTokenCookie () {
-                    return deserializeRefreshToken(req.headers.cookie)
+                    let headerCookie = req.headers.cookie
+                    if (typeof headerCookie !== 'string') {
+                        headerCookie = ''
+                    }
+                    return deserializeRefreshToken(headerCookie)
                 },
                 userId: await getUserIdFromAuthHeader(req.headers)
             }
