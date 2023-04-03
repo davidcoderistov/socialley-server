@@ -35,7 +35,6 @@ export function verifyToken (token: string): Promise<{ id: string, access?: bool
 export function serializeRefreshToken (refreshToken: string, immediate: boolean = false) {
     return cookie.serialize('refreshToken', refreshToken, {
         httpOnly: true,
-        domain: process.env.NODE_ENV !== 'production' ? 'localhost' : 'socialley-api.onrender.com',
         secure: true,
         maxAge: immediate ? 0 : 7 * 24 * 60 * 60,
         path: '/',
